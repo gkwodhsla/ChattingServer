@@ -1,14 +1,20 @@
+#define _WINSOCK_DEPRECATED_NO_WARNINGS
+#include "ChattingBuilding.h"
+#include "Outsourcer.h"
 #include "TotalManager.h"
 #include <iostream>
 
 TotalManager::TotalManager()
 {
 	InitServer();
-	ClientInfos.reserve(100);
+	CommandOutsourcer = new Outsourcer();
 }
 
 TotalManager::~TotalManager()
 {
+	delete CommandOutsourcer;
+	CommandOutsourcer = nullptr;
+
 	closesocket(ListenSocket);
 	WSACleanup();
 }
@@ -73,14 +79,6 @@ void TotalManager::DestroyRoom()
 {
 }
 
-void TotalManager::PrintAllClientName()
-{
-}
-
-void TotalManager::PrintAllRoomInfo()
-{
-}
-
 void TotalManager::ProcessingAfterSelect()
 {
 	if (FD_ISSET(ListenSocket, &ReadSet)) //리슨 소켓에서 받을 준비가 됐다면 accept로 새로운 클라이언트를 받는다.
@@ -130,8 +128,10 @@ void TotalManager::ProcessingAfterSelect()
 				RemoveClntSocket(i);
 				continue;
 			}
+			ClientInfos[i].Buffer[rcvSize] = '\0';
 			std::cout << ClientInfos[i].Buffer.data() << std::endl;
-			//소켓에 문제가 생기거나 연결이 끊기면 관리 배열에서 해당 소켓의 정보를 날린다.
+			std::string temp{ ClientInfos[i].Buffer.data() };
+			CommandOutsourcer->ExecutingCommand(temp);
 		}
 	}
 }

@@ -143,10 +143,15 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="ChattingBuilding.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Outsourcer.cpp" />
     <ClCompile Include="TotalManager.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ChattingBuilding.h" />
+    <ClInclude Include="Common.h" />
+    <ClInclude Include="Outsourcer.h" />
     <ClInclude Include="TotalManager.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

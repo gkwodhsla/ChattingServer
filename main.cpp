@@ -1,7 +1,7 @@
 #include "TotalManager.h"
-
+#include <sstream>
+#include <iostream>
 int main()
 {
-	TotalManager* tm = new TotalManager();
-	tm->MainLogic();
+	TotalManager::Instance().MainLogic();
 }
