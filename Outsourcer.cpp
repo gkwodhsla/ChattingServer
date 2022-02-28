@@ -14,7 +14,6 @@ void Outsourcer::SendingCommandList(ClientInfo& CommandRequestor)
 	strcpy(CommandRequestor.Buffer.data(), CommandList.c_str());
 	CommandRequestor.SendingSize = CommandList.size();
 
-	//sendLen = send(CommandRequestor.ClntSock, CommandList.c_str(), CommandList.size(), 0);
 	std::cout << "Send command list to requesting client" << std::endl;
 }
 
@@ -46,7 +45,7 @@ void Outsourcer::CreatingChattingroom(const std::string& RoomName, const int Cln
 {
 	std::vector<ChattingBuilding*>& buildings = TotalManager::Instance().GetBuildings();
 	std::vector<ClientInfo>& clientInfos = TotalManager::Instance().GetClientInfos();
-	
+
 	while (1)
 	{
 		bool isRoomExist = false;
@@ -54,16 +53,20 @@ void Outsourcer::CreatingChattingroom(const std::string& RoomName, const int Cln
 		{
 			if (buildings[i]->IsThereAnyEmptyRoom())//해당 건물에 빈 방이 있다면
 			{
-				buildings[i]->OccupyingRoom(RoomName, clientInfos[ClntIndex], MaxParticipant); //방을 차지하게 해주고, 요청한 클라이언트를 방에 넣어준다.
+				buildings[i]->OccupyingRoom(RoomName, clientInfos[ClntIndex], MaxParticipant);
+				//방을 차지하게 해주고(채팅방 개설), 방 개설을 요청한 클라이언트를 방에 넣어준다. 
+				//(방에 넣어주는 코드는 OccupyingRoom 함수에 존재)
 				isRoomExist = true;
 				break;
 			}
 		}
-		if (!isRoomExist) //만약 빈 방을 찾지 못 했다면 새로운 건물을 지어준다.
+		if (!isRoomExist) //만약 빈 방을 찾지 못 했다면 새로운 건물을 지어주고, 다시 빈 방을 찾도록 한다.
 		{
 			buildings.emplace_back(new ChattingBuilding());
 			std::vector<std::thread>& subThreads = TotalManager::Instance().GetSubThreads();
 			subThreads.emplace_back(std::thread(&ChattingBuilding::ProcessingLogic, buildings.back()));
+			//만약 새롭게 채팅 빌딩이 하나 세워졌다면 해당 빌딩에 속한 클라이언트의 요구(메시지 주고 받기)를
+			//처리해줄 새로운 쓰레드를 하나 만든다.
 		}
 		else
 		{
@@ -77,6 +80,8 @@ void Outsourcer::EnteringChattingroom(const int RoomIndex, ClientInfo& CommandRe
 	std::vector<ChattingBuilding*>& buildings = TotalManager::Instance().GetBuildings();
 	int maxRoom = ChattingBuilding::MAX_ROOM_NUM;
 	buildings[RoomIndex / maxRoom]->EnteringRoom(RoomIndex % maxRoom, CommandRequestor);
+	//RoomIndex/maxRoom -> 채팅빌딩 중 몇 번째 채팅빌딩인가?
+	//RoomIndex % maxRoom -> 앞에서 정한 채팅빌딩 중 몇 번째 방인가?
 }
 
 void Outsourcer::DisconnectingClient()
@@ -87,7 +92,7 @@ void Outsourcer::ExecutingCommand(ClientInfo& CommandRequestor, const int ClntIn
 {
 	std::transform(Command.begin(), Command.end(), Command.begin(),
 		[](unsigned char c) { return tolower(c); });
-	//우선 명령어를 모두 소문자로 변환한다.
+	//우선 입력받은 명령어를 모두 소문자로 바꾼다.
 
 	std::string temp;
 	std::istringstream is{ Command };
@@ -159,6 +164,6 @@ void Outsourcer::ExecutingCommand(ClientInfo& CommandRequestor, const int ClntIn
 	}
 	else
 	{
-		//명령어를 제대로 입력하라고 클라에게 보내주기
+		//명령어를 제대로 입력하라고 클라이언트에게 메시지 보내주기.
 	}
 }

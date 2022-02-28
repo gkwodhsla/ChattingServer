@@ -47,3 +47,8 @@ private:
 	fd_set WriteSet;
 	fd_set ReadSet;
 };
+
+//이 클래스는 이름 그대로 모든 자원을 관리하는 클래스이다.
+//MainLogic에서 접속하는 클라이언트들을 받아들이고, 아직 채팅방에
+//참가하지 않은 클라이언트들의 명령어를 받아 CommandOutsourcer에게
+//외주를 맡겨 명령어를 적절히 처리한다.

@@ -61,6 +61,18 @@ void TotalManager::InitServer()
 	ioctlsocket(ListenSocket, FIONBIO, &on);
 }
 
+void TotalManager::MarkingForRemoveClntSocket(SOCKET SocketDiscriptor)
+{
+	for (int i = 0; i < ClientInfos.size(); ++i)
+	{
+		if (SocketDiscriptor == ClientInfos[i].ClntSock)
+		{
+			ClientInfos[i].WillBeRemoved = true;
+			break;
+		}
+	}
+}
+
 void TotalManager::MainLogic()
 {
 	while (1)
@@ -73,7 +85,9 @@ void TotalManager::MainLogic()
 				i = -1;
 			}
 		}
-		//연결이 끊겨 소켓 정보가 관리 배열에서 지워져야 한다고 마킹이 되어있는 정보들을 모두 지운다.
+		//채팅방에서 연결이 끊겨 소켓 정보가 관리 배열(ClientInfos)에서 지워져야 한다고 마킹이 되어있다면
+		//마킹되어 있는 소켓 정보들을 전부 제거한다.
+
 		FD_ZERO(&WriteSet);
 		FD_ZERO(&ReadSet);
 
@@ -81,7 +95,7 @@ void TotalManager::MainLogic()
 
 		for (int i = 0; i < ClientInfos.size(); ++i)
 		{
-			if (!ClientInfos[i].IsJoinRoom) //방에 참가하지 않고, 로비에 머물고 있다면 TotalManager에서 소켓을 관리해준다.
+			if (!ClientInfos[i].IsJoinRoom) //채팅방에 참가하지 않았다면 TotalManager에서 소켓을 관리해준다.
 			{
 				if (ClientInfos[i].IsSend)
 				{
@@ -116,8 +130,9 @@ void TotalManager::ProcessingAfterSelect()
 		{
 			std::string welcomeMsg{ "Welcome to chatting server!\r\nYou can login using Login [Username] Command\r\n" };
 			send(clntSocket, welcomeMsg.c_str(), welcomeMsg.size(), 0);
+			//로그인 기능은 추후 구현 예정.
 
-			std::cout << "New client connected: " << inet_ntoa(clntAddr.sin_addr) << std::endl;
+			std::cout << "New client connected: " << inet_ntoa(clntAddr.sin_addr)<<", " << ntohs(clntAddr.sin_port) << std::endl;
 			ClientInfos.emplace_back(clntSocket);
 		}
 	}
@@ -134,6 +149,7 @@ void TotalManager::ProcessingAfterSelect()
 			{
 				RemoveClntSocket(i);
 				continue;
+				//만일 전송에 문제가 생기면 소켓 정보를 관리 배열에서 지운다.
 			}
 		}
 		else if (FD_ISSET(clntSocket, &ReadSet)) //만약 readSet가 활성화 되어있다면 recv 한다.
@@ -154,10 +170,14 @@ void TotalManager::ProcessingAfterSelect()
 				RemoveClntSocket(i);
 				continue;
 			}
+			//recv에 문제가 생기거나 상대방이 연결을 종료했다면 소켓 정보 관리배열에서
+			//해당 소켓을 제거한다.
 			ClientInfos[i].Buffer[rcvSize] = '\0';
 			std::cout << ClientInfos[i].Buffer.data() << std::endl;
 			std::string temp{ ClientInfos[i].Buffer.data() };
 			CommandOutsourcer->ExecutingCommand(ClientInfos[i], i, temp);
+			//명령어를 성공적으로 받았다면 받은 명령어를 CommandOutsourcer에게 외주를 맡긴다.
+			//CommandOutsourcer는 받은 명령어를 파싱해 적절하게 처리해준다.
 		}
 	}
 }
@@ -166,16 +186,4 @@ void TotalManager::RemoveClntSocket(int index)
 {
 	closesocket(ClientInfos[index].ClntSock);
 	ClientInfos.erase(ClientInfos.begin() + index);
-}
-
-void TotalManager::MarkingForRemoveClntSocket(SOCKET SocketDiscriptor)
-{
-	for (int i = 0; i < ClientInfos.size(); ++i)
-	{
-		if (SocketDiscriptor == ClientInfos[i].ClntSock)
-		{
-			ClientInfos[i].WillBeRemoved = true;
-			break;
-		}
-	}
 }

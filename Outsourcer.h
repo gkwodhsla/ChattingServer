@@ -21,9 +21,16 @@ public:
 	void EnteringChattingroom(const int RoomIndex, ClientInfo& CommandRequestor);
 	void DisconnectingClient();
 
+//위에 9개 함수를 하나 씩 채워나갈 예정
+
 public:
 	void ExecutingCommand(ClientInfo& CommandRequestor, const int ClntIndex, std::string& Command);
+	//TotalManager는 이 함수를 통해 Outsourcer에게 명령어를 대신 처리하게 맡긴다.
 
 private:
 	const std::string CommandList = { "\r\nH\t\t\t\t\tShow all command list\r\nUS\t\t\t\t\tShow all user\r\nLT\t\t\t\t\tShow all chattingroom\r\nST [room number]\t\t\tShow chattingroom info\r\nPF[other user Id]\t\t\tShow user info\r\nTO [other user Id] [message]\t\tSend mail\r\nO [Maximum participants] [Room name]\tCreate chattingroom\r\nJ [Room number]\t\t\t\tJoin the chattingroom\r\nX\t\t\t\t\tdisconnecting\r\n" };
+	//클라이언트가 h키를 통해 명령어를 요청했을 때 보낼 메시지이다.
 };
+
+//이 클래스는 TotalManager에게 명령어를 받아 파싱하고, 명령어에 따라
+//적절하게 처리해주는 클래스이다.
