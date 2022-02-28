@@ -32,6 +32,7 @@ private:
 	//ClientInfosEachRoom[i][j] -> i번째 방에서 채팅중인 j번째 클라이언트
 	std::string RoomNames[MAX_ROOM_NUM];
 	int MaximumParticipants[MAX_ROOM_NUM];
+	unsigned int CurParticipantInRoom[MAX_ROOM_NUM];
 	//사용자가 정한 최대 접속인원 수
 	bool IsEmptyRoom[MAX_ROOM_NUM];
 	fd_set ReadSet, WriteSet;

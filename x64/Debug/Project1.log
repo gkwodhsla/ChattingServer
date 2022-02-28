@@ -1,11 +1,13 @@
 ﻿  ChattingBuilding.cpp
-D:\Study\ChattingServer\ChattingServerHJO\Project1\ChattingBuilding.cpp(130,86): warning C4267: '인수': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+D:\Study\ChattingServer\ChattingServerHJO\Project1\ChattingBuilding.cpp(84,69): warning C4267: '인수': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+D:\Study\ChattingServer\ChattingServerHJO\Project1\ChattingBuilding.cpp(86,47): warning C4018: '<=': signed 또는 unsigned가 일치하지 않습니다.
+D:\Study\ChattingServer\ChattingServerHJO\Project1\ChattingBuilding.cpp(97,69): warning C4267: '인수': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+D:\Study\ChattingServer\ChattingServerHJO\Project1\ChattingBuilding.cpp(102,69): warning C4267: '인수': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+D:\Study\ChattingServer\ChattingServerHJO\Project1\ChattingBuilding.cpp(148,86): warning C4267: '인수': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
   Outsourcer.cpp
 D:\Study\ChattingServer\ChattingServerHJO\Project1\Outsourcer.cpp(12,91): warning C4267: '인수': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-D:\Study\ChattingServer\ChattingServerHJO\Project1\Outsourcer.cpp(142,62): warning C4267: '인수': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-D:\Study\ChattingServer\ChattingServerHJO\Project1\Outsourcer.cpp(148,62): warning C4267: '인수': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-  TotalManager.cpp
-D:\Study\ChattingServer\ChattingServerHJO\Project1\TotalManager.cpp(22,37): warning C4267: '초기화 중': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-D:\Study\ChattingServer\ChattingServerHJO\Project1\TotalManager.cpp(134,61): warning C4267: '인수': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+D:\Study\ChattingServer\ChattingServerHJO\Project1\Outsourcer.cpp(80,69): warning C4267: '인수': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+D:\Study\ChattingServer\ChattingServerHJO\Project1\Outsourcer.cpp(150,62): warning C4267: '인수': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+D:\Study\ChattingServer\ChattingServerHJO\Project1\Outsourcer.cpp(156,62): warning C4267: '인수': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
   코드를 생성하고 있습니다...
   Project1.vcxproj -> D:\Study\ChattingServer\ChattingServerHJO\x64\Debug\Project1.exe

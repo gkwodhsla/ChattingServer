@@ -9,6 +9,7 @@ ChattingBuilding::ChattingBuilding():ShouldLogicStop(false)
 		RoomNames[i] = "";
 		MaximumParticipants[i] = 0;
 		IsEmptyRoom[i] = true;
+		CurParticipantInRoom[i] = 0;
 	}
 	FD_ZERO(&ReadSet);
 	FD_ZERO(&WriteSet);
@@ -76,13 +77,32 @@ bool ChattingBuilding::IsThereAnyEmptyRoom()
 
 void ChattingBuilding::EnteringRoom(const int RoomIndex, ClientInfo& Client)
 {
-	Client.IsJoinRoom = true;
-	lock.lock();
-	ClientInfosEachRoom[RoomIndex].emplace_back(Client.ClntSock);
-	lock.unlock();
-	//소켓 디스크립터만 복사해 새롭게 정보를 만들어 넣어준다.
-	//TotalManager 관리 배열에서 이동을 시키면 한곳에서 관리가 어려울 것 같아서
-	//이렇게 구현했습니다.
+	std::string roomEnterMsg = "";
+	if (IsEmptyRoom[RoomIndex]) //개설되지 않은 방에 접속하려는 경우 클라이언트에게 안된다고 알려준다.
+	{
+		roomEnterMsg = "You can't entering the room (room is not exist)\r\n";
+		send(Client.ClntSock, roomEnterMsg.c_str(), roomEnterMsg.size(), 0);
+		return;
+	}
+
+	if (CurParticipantInRoom[RoomIndex] + 1 <= MaximumParticipants[RoomIndex]) //정상적으로 접속
+	{
+		Client.IsJoinRoom = true;
+		lock.lock();
+		ClientInfosEachRoom[RoomIndex].emplace_back(Client.ClntSock);
+		lock.unlock();
+		//소켓 디스크립터만 복사해 새롭게 정보를 만들어 넣어준다.
+		//TotalManager 관리 배열에서 이동을 시키면 한곳에서 관리가 어려울 것 같아서
+		//이렇게 구현했습니다.
+		roomEnterMsg = "Room name: " + RoomNames[RoomIndex] + "(" + std::to_string(++CurParticipantInRoom[RoomIndex]) +
+			"/" + std::to_string(MaximumParticipants[RoomIndex]) + ")";
+		send(Client.ClntSock, roomEnterMsg.c_str(), roomEnterMsg.size(), 0);
+	}
+	else //방 최대 인원을 넘어선 경우 접속하지 못 한다고 알려준다.
+	{
+		roomEnterMsg = "You can't enter this room (room fulled already)\r\n";
+		send(Client.ClntSock, roomEnterMsg.c_str(), roomEnterMsg.size(), 0);
+	}
 }
 
 ChattingBuilding::~ChattingBuilding()

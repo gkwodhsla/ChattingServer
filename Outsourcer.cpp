@@ -74,13 +74,21 @@ void Outsourcer::CreatingChattingroom(const std::string& RoomName, const int Cln
 void Outsourcer::EnteringChattingroom(const int RoomIndex, ClientInfo& CommandRequestor)
 {
 	std::vector<ChattingBuilding*>& buildings = TotalManager::Instance().GetBuildings();
-	int maxRoom = ChattingBuilding::MAX_ROOM_NUM;
-	int buildingIndex = RoomIndex / maxRoom;
-	int roomIndex = RoomIndex % maxRoom;
-	//RoomIndex/maxRoom -> 채팅빌딩 중 몇 번째 채팅빌딩인가?
-	//RoomIndex % maxRoom -> 앞에서 정한 채팅빌딩 중 몇 번째 방인가?
+	if (buildings.size() * ChattingBuilding::MAX_ROOM_NUM  - 1 < RoomIndex)
+	{
+		std::string failMsg = "You can't entering the room (room is not exist)\r\n";
+		send(CommandRequestor.ClntSock, failMsg.c_str(), failMsg.size(), 0);
+	}
+	else
+	{
+		int maxRoom = ChattingBuilding::MAX_ROOM_NUM;
+		int buildingIndex = RoomIndex / maxRoom;
+		int roomIndex = RoomIndex % maxRoom;
+		//RoomIndex/maxRoom -> 채팅빌딩 중 몇 번째 채팅빌딩인가?
+		//RoomIndex % maxRoom -> 앞에서 정한 채팅빌딩 중 몇 번째 방인가?
 
-	buildings[buildingIndex]->EnteringRoom(roomIndex, CommandRequestor);
+		buildings[buildingIndex]->EnteringRoom(roomIndex, CommandRequestor);
+	}
 }
 
 void Outsourcer::DisconnectingClient()
@@ -142,9 +150,9 @@ void Outsourcer::ExecutingCommand(ClientInfo& CommandRequestor, const int ClntIn
 			send(CommandRequestor.ClntSock, msg.c_str(), msg.size(), 0);
 		}
 		//숫자가 나와야하는데 알파벳이 하나라도 나온다면 다시 명령어를 입력해달라고 요청한다.
-		else if (std::stoi(tokens[1]) > 16)
+		else if (std::stoi(tokens[1]) > 16 || std::stoi(tokens[1]) < 2)
 		{
-			std::string msg{ "\r\nMaximum participant must under 16\r\n" };
+			std::string msg{ "\r\nparticipant range must (2 ~ 16)\r\n" };
 			send(CommandRequestor.ClntSock, msg.c_str(), msg.size(), 0);
 		}
 		//만약 최대 참석인원 수를 넘긴 숫자가 입력됐다면 다시 명령어를 입력해달라고 요청한다.
