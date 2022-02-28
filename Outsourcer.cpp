@@ -22,8 +22,10 @@ void Outsourcer::SendingUserList()
 	std::cout << "유저 리스트를 클라이언트에게 보낼 예정" << std::endl;
 }
 
-void Outsourcer::SendingChattingroomList()
+void Outsourcer::SendingChattingroomList(ClientInfo& CommandRequestor)
 {
+	std::vector<ChattingBuilding*>& buildings = TotalManager::Instance().GetBuildings();
+	
 	std::cout << "채팅룸 리스트를 클라이언트에게 보낼 예정" << std::endl;
 }
 
@@ -104,7 +106,7 @@ void Outsourcer::ExecutingCommand(ClientInfo& CommandRequestor, const int ClntIn
 	}
 	else if (tokens[0] == "lt")
 	{
-		SendingChattingroomList();
+		SendingChattingroomList(CommandRequestor);
 	}
 	else if (tokens[0] == "st")
 	{

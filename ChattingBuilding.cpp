@@ -95,16 +95,27 @@ void ChattingBuilding::ProcessingAfterSelect()
 			{
 
 			}
-			else if(FD_ISSET(clntSock, &ReadSet)) // 데이터를 읽어온 경우 
+			else if (FD_ISSET(clntSock, &ReadSet)) // 데이터를 읽어온 경우 
 			{
 				int recvSize = 0;
-				recvSize = recv(clntSock, ClientInfosEachRoom[i][j].Buffer.data(), ClientInfo::MAX_BUFFER_SIZE, 0);
-				ClientInfosEachRoom[i][j].Buffer.data()[recvSize] = '\0';
-				std::cout << "Thread ID: " << std::this_thread::get_id() << ", Room Name: " << RoomNames[i] << ", Content: " << ClientInfosEachRoom[i][j].Buffer.data() << std::endl;
+				std::array<char, 1024>& buffer = ClientInfosEachRoom[i][j].Buffer;
+
+				ZeroMemory(buffer.data(), ClientInfo::MAX_BUFFER_SIZE);
+				//클라이언트에게 메시지를 받기 전에 버퍼를 비워준다.
+				//보낼 데이터가 없는 경우에만 read_set에 소켓을 넣어주기 때문에 보낼 데이터가 유실되지 않는다.
+				recvSize = recv(clntSock, buffer.data(), ClientInfo::MAX_BUFFER_SIZE, 0);
+				buffer.data()[recvSize] = '\0';
+
+				std::string msgToSend = std::string("\r\nOther Client Name: ") + std::string(buffer.data(), buffer.data() + recvSize) + "\r\n";
+				//메세지의 형식은 다른 클라이언트 이름: 메시지 내용 이다.
+				//e.g.) HJO: Hello world
+				//추후 로그인 기능까지 구현이 되면 Other Client Name에 실제 유저의 이름을 넣어줄 예정.
 				for (int k = 0; k < ClientInfosEachRoom[i].size(); ++k)
 				{
-					send(ClientInfosEachRoom[i][k].ClntSock, ClientInfosEachRoom[i][j].Buffer.data(), recvSize + 1, 0);
+					send(ClientInfosEachRoom[i][k].ClntSock, msgToSend.c_str(), msgToSend.size(), 0);
 				}
+
+				std::cout << "Thread ID: " << std::this_thread::get_id() << ", Room Name: " << RoomNames[i] << ", Content: " << ClientInfosEachRoom[i][j].Buffer.data() << std::endl;
 			}
 		}
 	}

@@ -2,7 +2,7 @@
 #include "Common.h"
 //TotalManager에게 외주를 받아 명령어를 처리해주는 클래스이다.
 
-class Outsourcer
+class Outsourcer final
 {
 public:
 	Outsourcer() = default;
@@ -11,7 +11,7 @@ public:
 public:
 	void SendingCommandList(ClientInfo& CommandRequestor);
 	void SendingUserList();
-	void SendingChattingroomList();
+	void SendingChattingroomList(ClientInfo& CommandRequestor);
 	void SendingChattingroomInfo();
 	void SendingUserInfo();
 	//여기까지는 요청한 클라이언트에게 메시지 보내는 것

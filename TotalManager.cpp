@@ -116,6 +116,8 @@ void TotalManager::ProcessingAfterSelect()
 		else if (FD_ISSET(clntSocket, &ReadSet)) //만약 readSet가 활성화 되어있다면 recv 한다.
 		{
 			unsigned int rcvSize = 0;
+			ZeroMemory(ClientInfos[i].Buffer.data(), ClientInfo::MAX_BUFFER_SIZE);
+			//클라이언트에게 명령어를 받기 전에 버퍼를 비워준다.
 			rcvSize = recv(clntSocket, ClientInfos[i].Buffer.data(), ClientInfo::MAX_BUFFER_SIZE, 0);
 			if (rcvSize == SOCKET_ERROR)
 			{
