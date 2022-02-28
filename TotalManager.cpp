@@ -154,17 +154,19 @@ void TotalManager::ProcessingAfterSelect()
 		}
 		else if (FD_ISSET(clntSocket, &ReadSet)) //만약 readSet가 활성화 되어있다면 recv 한다.
 		{
-			unsigned int rcvSize = 0;
-			ZeroMemory(ClientInfos[i].Buffer.data(), ClientInfo::MAX_BUFFER_SIZE);
-			//클라이언트에게 명령어를 받기 전에 버퍼를 비워준다.
-			rcvSize = recv(clntSocket, ClientInfos[i].Buffer.data(), ClientInfo::MAX_BUFFER_SIZE, 0);
-			if (rcvSize == SOCKET_ERROR)
+			//unsigned int rcvSize = 0;
+			//rcvSize = recv(clntSocket, ClientInfos[i].Buffer.data(), ClientInfo::MAX_BUFFER_SIZE, 0);
+			
+			std::pair<bool, int>rcvResult =
+				CustomRecv(clntSocket, ClientInfos[i].Buffer.data(), ClientInfo::MAX_BUFFER_SIZE, 0, ClientInfos[i]);
+			
+			if (rcvResult.second == SOCKET_ERROR)
 			{
 				std::cout << "recv error" << std::endl;
 				RemoveClntSocket(i);
 				continue;
 			}
-			else if (rcvSize == 0)
+			else if (rcvResult.second == 0)
 			{
 				std::cout << "disconnect" << std::endl;
 				RemoveClntSocket(i);
@@ -172,12 +174,17 @@ void TotalManager::ProcessingAfterSelect()
 			}
 			//recv에 문제가 생기거나 상대방이 연결을 종료했다면 소켓 정보 관리배열에서
 			//해당 소켓을 제거한다.
-			ClientInfos[i].Buffer[rcvSize] = '\0';
-			std::cout << ClientInfos[i].Buffer.data() << std::endl;
-			std::string temp{ ClientInfos[i].Buffer.data() };
-			CommandOutsourcer->ExecutingCommand(ClientInfos[i], i, temp);
-			//명령어를 성공적으로 받았다면 받은 명령어를 CommandOutsourcer에게 외주를 맡긴다.
-			//CommandOutsourcer는 받은 명령어를 파싱해 적절하게 처리해준다.
+			if (rcvResult.first)
+			{
+				ClientInfos[i].Buffer[rcvResult.second] = '\0';
+				std::cout << ClientInfos[i].Buffer.data() << std::endl;
+				std::string temp{ ClientInfos[i].Buffer.data() };
+				CommandOutsourcer->ExecutingCommand(ClientInfos[i], i, temp);
+				//명령어를 성공적으로 받았다면 받은 명령어를 CommandOutsourcer에게 외주를 맡긴다.
+				//CommandOutsourcer는 받은 명령어를 파싱해 적절하게 처리해준다.
+				ZeroMemory(ClientInfos[i].Buffer.data(), ClientInfo::MAX_BUFFER_SIZE);
+				ClientInfos[i].RcvSize = 0;
+			}
 		}
 	}
 }

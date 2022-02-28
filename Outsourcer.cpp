@@ -9,12 +9,8 @@
 
 void Outsourcer::SendingCommandList(ClientInfo& CommandRequestor)
 {
-	int sendLen = 0;
-	CommandRequestor.IsSend = true;
-	strcpy(CommandRequestor.Buffer.data(), CommandList.c_str());
-	CommandRequestor.SendingSize = CommandList.size();
-
-	std::cout << "Send command list to requesting client" << std::endl;
+	auto sndSize = send(CommandRequestor.ClntSock, CommandList.c_str(), CommandList.size(), 0);
+	std::cout << sndSize<<" Send command list to requesting client" << std::endl;
 }
 
 void Outsourcer::SendingUserList()

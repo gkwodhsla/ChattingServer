@@ -144,6 +144,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="ChattingBuilding.cpp" />
+    <ClCompile Include="Common.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Outsourcer.cpp" />
     <ClCompile Include="TotalManager.cpp" />
