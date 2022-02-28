@@ -20,12 +20,14 @@ public:
 public:
 	void InitServer();
 	void MainLogic();
-	void CreateRoom();
-	void DestroyRoom();
 
 public:
+	std::vector<ClientInfo>& GetClientInfos() { return ClientInfos; }
 	const std::vector<ClientInfo>& GetClientInfos() const { return ClientInfos; }
-	const std::vector<ChattingBuilding*>& GetRooms() const { return Buildings; }
+	std::vector<ChattingBuilding*>& GetBuildings() { return Buildings; }
+	const std::vector<ChattingBuilding*>& GetBuildings() const { return Buildings; }
+	std::vector<std::thread>& GetSubThreads() { return SubThreads; }
+	const std::vector<std::thread>& GetSubThreads() const { return SubThreads; }
 
 private:
 	TotalManager();

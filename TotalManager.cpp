@@ -8,6 +8,8 @@ TotalManager::TotalManager()
 {
 	InitServer();
 	CommandOutsourcer = new Outsourcer();
+	Buildings.emplace_back(new ChattingBuilding());
+	SubThreads.emplace_back(&ChattingBuilding::ProcessingLogic, Buildings.back());
 }
 
 TotalManager::~TotalManager()
@@ -56,13 +58,16 @@ void TotalManager::MainLogic()
 
 		for (int i = 0; i < ClientInfos.size(); ++i)
 		{
-			if (ClientInfos[i].IsSend)
+			if (!ClientInfos[i].IsJoinRoom) //방에 참가하지 않고, 로비에 머물고 있다면 TotalManager에서 소켓을 관리해준다.
 			{
-				FD_SET(ClientInfos[i].ClntSock, &WriteSet);
-			}
-			else
-			{
-				FD_SET(ClientInfos[i].ClntSock, &ReadSet);
+				if (ClientInfos[i].IsSend)
+				{
+					FD_SET(ClientInfos[i].ClntSock, &WriteSet);
+				}
+				else
+				{
+					FD_SET(ClientInfos[i].ClntSock, &ReadSet);
+				}
 			}
 		}
 		select(0, &ReadSet, &WriteSet, nullptr, nullptr); // 하나라도 준비가 된 소켓이 있을 때 까지 대기한다.
@@ -71,17 +76,9 @@ void TotalManager::MainLogic()
 	}
 }
 
-void TotalManager::CreateRoom()
-{
-}
-
-void TotalManager::DestroyRoom()
-{
-}
-
 void TotalManager::ProcessingAfterSelect()
 {
-	if (FD_ISSET(ListenSocket, &ReadSet)) //리슨 소켓에서 받을 준비가 됐다면 accept로 새로운 클라이언트를 받는다.
+	if (FD_ISSET(ListenSocket, &ReadSet)) //listen socket에서 받을 준비가 됐다면 accept로 새로운 클라이언트를 받는다.
 	{
 		SOCKET clntSocket;
 		SOCKADDR_IN clntAddr;
@@ -94,6 +91,9 @@ void TotalManager::ProcessingAfterSelect()
 		}
 		else //만약 클라이언트가 성공적으로 accept 되었다면 클라이언트 정보를 관리하는 벡터에 넣어준다.
 		{
+			std::string welcomeMsg{ "Welcome to chatting server!\r\nYou can login using Login [Username] Command\r\n" };
+			send(clntSocket, welcomeMsg.c_str(), welcomeMsg.size(), 0);
+
 			std::cout << "New client connected: " << inet_ntoa(clntAddr.sin_addr) << std::endl;
 			ClientInfos.emplace_back(clntSocket);
 		}
@@ -105,7 +105,8 @@ void TotalManager::ProcessingAfterSelect()
 		if (FD_ISSET(clntSocket, &WriteSet)) //만약 writeSet가 활성화 되어있다면 send 한다.
 		{
 			unsigned int sendSize = 0;
-			sendSize = send(clntSocket, ClientInfos[i].Buffer.data(), ClientInfo::MAX_BUFFER_SIZE, 0);
+			sendSize = send(clntSocket, ClientInfos[i].Buffer.data(), ClientInfos[i].SendingSize, 0);
+			ClientInfos[i].IsSend = false;
 			if (sendSize == SOCKET_ERROR)
 			{
 				RemoveClntSocket(i);
@@ -131,7 +132,7 @@ void TotalManager::ProcessingAfterSelect()
 			ClientInfos[i].Buffer[rcvSize] = '\0';
 			std::cout << ClientInfos[i].Buffer.data() << std::endl;
 			std::string temp{ ClientInfos[i].Buffer.data() };
-			CommandOutsourcer->ExecutingCommand(temp);
+			CommandOutsourcer->ExecutingCommand(ClientInfos[i], i, temp);
 		}
 	}
 }
