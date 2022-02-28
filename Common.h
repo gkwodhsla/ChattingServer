@@ -14,6 +14,8 @@ struct ClientInfo
 	std::string Name;
 	bool IsSend = false; //이 플래그가 true일 때만 메시지를 클라이언트에게 보낸다.
 	bool IsJoinRoom = false; //이 플래그가 false일 때만 메인쓰레드에서 세트에 소켓을 넣어준다.
+	bool WillBeRemoved = false; //채팅방에 접속한 상태에서 클라이언트 연결이 끊기면 해당 플래그가 true가되고,
+								//메인 쓰레드에서 해당 플래그가 true인지 검사해 실제로 제거한다.
 	int SendingSize = 0;
 
 public:

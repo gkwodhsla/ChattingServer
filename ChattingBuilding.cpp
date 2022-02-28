@@ -1,4 +1,5 @@
 #include "ChattingBuilding.h"
+#include "TotalManager.h"
 #include <iostream>
 #include <mutex>
 
@@ -15,7 +16,7 @@ void ChattingBuilding::ProcessingLogic()
 	timeout.tv_sec = 0;
 	timeout.tv_usec = 500;
 
-	while (1)
+	while (!ShouldLogicStop)
 	{
 		gLock.lock();
 		FD_ZERO(&WriteSet);
@@ -97,16 +98,31 @@ void ChattingBuilding::ProcessingAfterSelect()
 			}
 			else if (FD_ISSET(clntSock, &ReadSet)) // 데이터를 읽어온 경우 
 			{
-				int recvSize = 0;
+				int rcvSize = 0;
 				std::array<char, 1024>& buffer = ClientInfosEachRoom[i][j].Buffer;
 
 				ZeroMemory(buffer.data(), ClientInfo::MAX_BUFFER_SIZE);
 				//클라이언트에게 메시지를 받기 전에 버퍼를 비워준다.
 				//보낼 데이터가 없는 경우에만 read_set에 소켓을 넣어주기 때문에 보낼 데이터가 유실되지 않는다.
-				recvSize = recv(clntSock, buffer.data(), ClientInfo::MAX_BUFFER_SIZE, 0);
-				buffer.data()[recvSize] = '\0';
+				rcvSize = recv(clntSock, buffer.data(), ClientInfo::MAX_BUFFER_SIZE, 0);
 
-				std::string msgToSend = std::string("\r\nOther Client Name: ") + std::string(buffer.data(), buffer.data() + recvSize) + "\r\n";
+				if (rcvSize == SOCKET_ERROR)
+				{
+					std::cout << "recv error" << std::endl;
+					RemoveClntSocket(i, j);
+					continue;
+				}
+				else if (rcvSize == 0)
+				{
+					std::cout << "disconnect" << std::endl;
+					RemoveClntSocket(i, j);
+					continue;
+				}
+
+
+				buffer.data()[rcvSize] = '\0';
+
+				std::string msgToSend = std::string("\r\nOther Client Name: ") + std::string(buffer.data(), buffer.data() + rcvSize) + "\r\n";
 				//메세지의 형식은 다른 클라이언트 이름: 메시지 내용 이다.
 				//e.g.) HJO: Hello world
 				//추후 로그인 기능까지 구현이 되면 Other Client Name에 실제 유저의 이름을 넣어줄 예정.
@@ -119,4 +135,10 @@ void ChattingBuilding::ProcessingAfterSelect()
 			}
 		}
 	}
+}
+
+void ChattingBuilding::RemoveClntSocket(int RoomNumber, int Index)
+{
+	TotalManager::Instance().MarkingForRemoveClntSocket(ClientInfosEachRoom[RoomNumber][Index].ClntSock);
+	ClientInfosEachRoom[RoomNumber].erase(ClientInfosEachRoom[RoomNumber].begin() + Index);
 }

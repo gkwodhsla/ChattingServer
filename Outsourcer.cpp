@@ -3,6 +3,7 @@
 #include "Outsourcer.h"
 #include "TotalManager.h"
 #include <algorithm>
+#include <cctype>
 #include <sstream>
 #include <iostream>
 
@@ -122,11 +123,27 @@ void Outsourcer::ExecutingCommand(ClientInfo& CommandRequestor, const int ClntIn
 	}
 	else if (tokens[0] == "o")
 	{
-		if (std::stoi(tokens[1]) > 16)
+		bool isThereAlphabet = false;
+		for (int i = 0; i < tokens[1].size(); ++i)
 		{
-			std::string msg{ "\r\nMaximum participant must under 16" };
+			if (isalpha(tokens[1][i]))
+			{
+				isThereAlphabet = true;
+				break;
+			}
+		}
+		if (isThereAlphabet)
+		{
+			std::string msg{ "\r\nParticipant count only accept numeric number\r\n" };
 			send(CommandRequestor.ClntSock, msg.c_str(), msg.size(), 0);
 		}
+		//숫자가 나와야하는데 알파벳이 하나라도 나온다면 다시 명령어를 입력해달라고 요청한다.
+		else if (std::stoi(tokens[1]) > 16)
+		{
+			std::string msg{ "\r\nMaximum participant must under 16\r\n" };
+			send(CommandRequestor.ClntSock, msg.c_str(), msg.size(), 0);
+		}
+		//만약 최대 참석인원 수를 넘긴 숫자가 입력됐다면 다시 명령어를 입력해달라고 요청한다.
 		else
 		{
 			CreatingChattingroom(tokens[2], ClntIndex, std::stoi(tokens[1]));

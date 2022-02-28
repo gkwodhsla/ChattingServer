@@ -20,6 +20,7 @@ public:
 public:
 	void InitServer();
 	void MainLogic();
+	void MarkingForRemoveClntSocket(SOCKET SocketDiscriptor);
 
 public:
 	std::vector<ClientInfo>& GetClientInfos() { return ClientInfos; }

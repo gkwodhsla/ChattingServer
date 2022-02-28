@@ -6,16 +6,30 @@
 
 TotalManager::TotalManager()
 {
-	InitServer();
-	CommandOutsourcer = new Outsourcer();
 	Buildings.emplace_back(new ChattingBuilding());
 	SubThreads.emplace_back(&ChattingBuilding::ProcessingLogic, Buildings.back());
+	CommandOutsourcer = new Outsourcer();
+	InitServer();
 }
 
 TotalManager::~TotalManager()
 {
 	delete CommandOutsourcer;
 	CommandOutsourcer = nullptr;
+
+	int buildingSize = Buildings.size();
+	for (int i = 0; i < buildingSize; ++i)
+	{
+		Buildings[0]->StopChattingroomLogic();
+		SubThreads[0].join();
+		//채팅방들의 처리를 관할하던 쓰레드들을 전부 중지 시킨다.
+		//안전하게 종료하는 것을 기다리기 위해 join으로 기다려준다.
+		if (Buildings[0] != nullptr)
+		{
+			delete Buildings[0];
+			Buildings[0] = nullptr;
+		}
+	}
 
 	closesocket(ListenSocket);
 	WSACleanup();
@@ -51,6 +65,15 @@ void TotalManager::MainLogic()
 {
 	while (1)
 	{
+		for (int i = 0; i < ClientInfos.size(); ++i)
+		{
+			if (ClientInfos[i].WillBeRemoved)
+			{
+				RemoveClntSocket(i);
+				i = -1;
+			}
+		}
+		//연결이 끊겨 소켓 정보가 관리 배열에서 지워져야 한다고 마킹이 되어있는 정보들을 모두 지운다.
 		FD_ZERO(&WriteSet);
 		FD_ZERO(&ReadSet);
 
@@ -143,4 +166,16 @@ void TotalManager::RemoveClntSocket(int index)
 {
 	closesocket(ClientInfos[index].ClntSock);
 	ClientInfos.erase(ClientInfos.begin() + index);
+}
+
+void TotalManager::MarkingForRemoveClntSocket(SOCKET SocketDiscriptor)
+{
+	for (int i = 0; i < ClientInfos.size(); ++i)
+	{
+		if (SocketDiscriptor == ClientInfos[i].ClntSock)
+		{
+			ClientInfos[i].WillBeRemoved = true;
+			break;
+		}
+	}
 }
