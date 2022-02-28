@@ -1,6 +1,6 @@
 #pragma once
 #include "Common.h"
-//TotalManager에게 외주를 받아 명령어를 처리해주는 클래스이다.
+//TotalManager에게 외주를 받아 명령어를 처리해주는 클래스입니다.
 
 class Outsourcer final
 {
@@ -10,27 +10,37 @@ public:
 
 public:
 	void SendingCommandList(ClientInfo& CommandRequestor);
+	//클라이언트가 사용할 수 있는 명령어 리스트를 보내줍니다.
 	void SendingUserList();
+	//유저 목록을 클라이언트에게 보냅니다.
 	void SendingChattingroomList(ClientInfo& CommandRequestor);
+	//채팅방 목록을 클라이언트에게 보냅니다.
 	void SendingChattingroomInfo();
+	//특정 채팅방 정보를 클라이언트에게 보냅니다.
 	void SendingUserInfo();
+	//특정 유저의 정보를 클라이언트에게 보냅니다.
 	//여기까지는 요청한 클라이언트에게 메시지 보내는 것
 public:
 	void SendingMail();
+	//특정 유저에게 귓속말을 보냅니다.
 	void CreatingChattingroom(const std::string& RoomName, const int ClntIndex, const int MaxParticipant);
+	//클라이언트가 요청한 제목과 최대 참가인원을 참고해 채팅방을 만들어줍니다.
 	void EnteringChattingroom(const int RoomIndex, ClientInfo& CommandRequestor);
+	//채팅방에 진입합니다.
 	void DisconnectingClient();
-
-//위에 9개 함수를 하나 씩 채워나갈 예정
+	//이 요청을 요구한 클라이언트와 연결을 종료합니다.
+//위에 9개 함수를 하나 씩 채워나갈 예정입니다.
 
 public:
 	void ExecutingCommand(ClientInfo& CommandRequestor, const int ClntIndex, std::string& Command);
-	//TotalManager는 이 함수를 통해 Outsourcer에게 명령어를 대신 처리하게 맡긴다.
+	//TotalManager는 이 함수를 통해 Outsourcer에게 명령어를 대신 처리하게 맡깁니다.
 
 private:
-	const std::string CommandList = { "\r\nH\t\t\t\t\tShow all command list\r\nUS\t\t\t\t\tShow all user\r\nLT\t\t\t\t\tShow all chattingroom\r\nST [room number]\t\t\tShow chattingroom info\r\nPF[other user Id]\t\t\tShow user info\r\nTO [other user Id] [message]\t\tSend mail\r\nO [Maximum participants] [Room name]\tCreate chattingroom\r\nJ [Room number]\t\t\t\tJoin the chattingroom\r\nX\t\t\t\t\tdisconnecting\r\n" };
-	//클라이언트가 h키를 통해 명령어를 요청했을 때 보낼 메시지이다.
+	static inline const std::string CommandList = { "\r\nH\t\t\t\t\tShow all command list\r\nUS\t\t\t\t\tShow all user\r\nLT\t\t\t\t\tShow all chattingroom\r\nST [room number]\t\t\tShow chattingroom info\r\nPF[other user Id]\t\t\tShow user info\r\nTO [other user Id] [message]\t\tSend mail\r\nO [Maximum participants] [Room name]\tCreate chattingroom\r\nJ [Room number]\t\t\t\tJoin the chattingroom\r\nX\t\t\t\t\tdisconnecting\r\n" };
+	//클라이언트가 h키를 통해 명령어를 요청했을 때 보낼 메시지입니다.
 };
 
 //이 클래스는 TotalManager에게 명령어를 받아 파싱하고, 명령어에 따라
-//적절하게 처리해주는 클래스이다.
+//적절하게 처리해주는 클래스입니다.
+//현재 명령어 리스트 출력, 방 생성, 방 진입까지 구현했습니다.
+//3월 1일에 방 생성, 진입 조금 더 다듬고, 목록 및 특정 채팅방, 유저 출력 구현해보고자 합니다.

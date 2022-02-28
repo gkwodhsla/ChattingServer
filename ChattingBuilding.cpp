@@ -1,12 +1,17 @@
 #include "ChattingBuilding.h"
 #include "TotalManager.h"
 #include <iostream>
-#include <mutex>
 
-std::mutex gLock; //임시로 쓰는 lock
-
-ChattingBuilding::ChattingBuilding()
+ChattingBuilding::ChattingBuilding():ShouldLogicStop(false)
 {
+	for (int i = 0; i < MAX_ROOM_NUM; ++i)
+	{
+		RoomNames[i] = "";
+		MaximumParticipants[i] = 0;
+		IsEmptyRoom[i] = true;
+	}
+	FD_ZERO(&ReadSet);
+	FD_ZERO(&WriteSet);
 }
 
 void ChattingBuilding::ProcessingLogic()
@@ -14,14 +19,14 @@ void ChattingBuilding::ProcessingLogic()
 	struct timeval timeout;
 
 	timeout.tv_sec = 0;
-	timeout.tv_usec = 500;
+	timeout.tv_usec = ChattingBuilding::SOCKET_TIME_WAIT_MS;
 
 	while (!ShouldLogicStop)
 	{
-		gLock.lock();
 		FD_ZERO(&WriteSet);
 		FD_ZERO(&ReadSet);
 
+		lock.lock();
 		for (int i = 0; i < MAX_ROOM_NUM; ++i)
 		{
 			for (int j = 0; j < ClientInfosEachRoom[i].size(); ++j)
@@ -38,7 +43,7 @@ void ChattingBuilding::ProcessingLogic()
 		}
 		select(0, &ReadSet, &WriteSet, nullptr, &timeout);
 		ProcessingAfterSelect();
-		gLock.unlock();
+		lock.unlock();
 	}
 }
 
@@ -72,7 +77,12 @@ bool ChattingBuilding::IsThereAnyEmptyRoom()
 void ChattingBuilding::EnteringRoom(const int RoomIndex, ClientInfo& Client)
 {
 	Client.IsJoinRoom = true;
+	lock.lock();
 	ClientInfosEachRoom[RoomIndex].emplace_back(Client.ClntSock);
+	lock.unlock();
+	//소켓 디스크립터만 복사해 새롭게 정보를 만들어 넣어준다.
+	//TotalManager 관리 배열에서 이동을 시키면 한곳에서 관리가 어려울 것 같아서
+	//이렇게 구현했습니다.
 }
 
 ChattingBuilding::~ChattingBuilding()
@@ -93,22 +103,12 @@ void ChattingBuilding::ProcessingAfterSelect()
 			}
 			else if (FD_ISSET(clntSock, &ReadSet)) // 데이터를 읽어야하는 경우
 			{
-				//int rcvSize = 0;
 				std::array<char, 1024>& buffer = ClientInfosEachRoom[i][j].Buffer;
-
-				//클라이언트에게 새로운 메시지를 받기 전에 버퍼를 비워준다.
-				//rcvSize = recv(clntSock, buffer.data(), ClientInfo::MAX_BUFFER_SIZE, 0);
 
 				std::pair<bool, int>rcvResult =
 					CustomRecv(clntSock, buffer.data(), ClientInfo::MAX_BUFFER_SIZE, 0, ClientInfosEachRoom[i][j]);
 
-				if (rcvResult.second == SOCKET_ERROR)
-				{
-					std::cout << "recv error" << std::endl;
-					RemoveClntSocket(i, j);
-					continue;
-				}
-				else if (rcvResult.second == 0)
+				if (rcvResult.second == 0)
 				{
 					std::cout << "disconnect" << std::endl;
 					RemoveClntSocket(i, j);
@@ -124,7 +124,7 @@ void ChattingBuilding::ProcessingAfterSelect()
 					std::string msgToSend = std::string("\r\nOther Client Name: ") + std::string(buffer.data(), buffer.data() + rcvResult.second) + "\r\n";
 					//메세지의 형식은 다른 클라이언트 이름: 메시지 내용 이다.
 					//e.g.) HJO: Hello world
-					//추후 로그인 기능까지 구현이 되면 Other Client Name에 실제 유저의 이름을 넣어줄 예정임.
+					//(추후 로그인 기능까지 구현이 되면 Other Client Name에 실제 유저의 이름을 넣어줄 예정입니다.)
 					for (int k = 0; k < ClientInfosEachRoom[i].size(); ++k)
 					{
 						send(ClientInfosEachRoom[i][k].ClntSock, msgToSend.c_str(), msgToSend.size(), 0);
@@ -144,6 +144,6 @@ void ChattingBuilding::RemoveClntSocket(int RoomNumber, int Index)
 {
 	TotalManager::Instance().MarkingForRemoveClntSocket(ClientInfosEachRoom[RoomNumber][Index].ClntSock);
 	//서브 쓰레드에서 메인 쓰레드에서 관리하는 소켓 정보를 직접 수정하면 문제가 생길 수 있을 것 같아
-	//마킹만 해놓고 직접 제거하는 것은 메인 쓰레드가 하게끔 구현함.
+	//마킹만 해놓고 직접 제거하는 것은 메인 쓰레드가 하게끔 구현했습니다.
 	ClientInfosEachRoom[RoomNumber].erase(ClientInfosEachRoom[RoomNumber].begin() + Index);
 }

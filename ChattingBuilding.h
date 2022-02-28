@@ -1,6 +1,7 @@
 #pragma once
 #include "Common.h"
 #include <atomic>
+#include <mutex>
 
 class ChattingBuilding final
 {
@@ -24,19 +25,22 @@ private:
 public:
 	static const unsigned int MAX_ROOM_NUM = 4;
 	static const unsigned int MAX_PARTICIPANT_EACH_ROOM = 16;
+	static const int SOCKET_TIME_WAIT_MS = 100;
 
 private:
 	std::vector<ClientInfo> ClientInfosEachRoom[MAX_ROOM_NUM];
 	//ClientInfosEachRoom[i][j] -> i번째 방에서 채팅중인 j번째 클라이언트
 	std::string RoomNames[MAX_ROOM_NUM];
-	int MaximumParticipants[MAX_ROOM_NUM] = {0, 0, 0, 0};
+	int MaximumParticipants[MAX_ROOM_NUM];
 	//사용자가 정한 최대 접속인원 수
-	bool IsEmptyRoom[MAX_ROOM_NUM] = {true, true, true, true};
+	bool IsEmptyRoom[MAX_ROOM_NUM];
 	fd_set ReadSet, WriteSet;
-	std::atomic<bool> ShouldLogicStop = false;
+	std::atomic<bool> ShouldLogicStop;
+	std::mutex lock;
 	//MainThread에서 해당 건물의 Thread를 중단시키고 싶을 때 이 플래그를 true로 만들어준다.
 };
 
-//이 클래스는 총 4개의 채팅방과 각각의 채팅방에 접속한 클라이언트를 관리함.
+//이 클래스는 총 4개의 채팅방과 각각의 채팅방에 접속한 클라이언트를 관리합니다.
+//방 4개가 모이면 하나의 건물이 된다고 생각해 이름을 ChattingBuilding이라고 지었습니다.
 //select 모델이 최대 64개의 소켓을 처리할 수 있다고 해서 최대 방 4개, 각 방마다 최대
-//접속 인원을 16명으로 고정시킴.
+//접속 인원을 16명으로 고정시켰습니다.

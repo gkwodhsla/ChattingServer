@@ -4,8 +4,10 @@
 #include "TotalManager.h"
 #include <iostream>
 
-TotalManager::TotalManager()
+TotalManager::TotalManager():ListenSocket(0), CommandOutsourcer(nullptr)
 {
+	FD_ZERO(&WriteSet);
+	FD_ZERO(&ReadSet);
 	Buildings.emplace_back(new ChattingBuilding());
 	SubThreads.emplace_back(&ChattingBuilding::ProcessingLogic, Buildings.back());
 	CommandOutsourcer = new Outsourcer();
@@ -153,20 +155,11 @@ void TotalManager::ProcessingAfterSelect()
 			}
 		}
 		else if (FD_ISSET(clntSocket, &ReadSet)) //만약 readSet가 활성화 되어있다면 recv 한다.
-		{
-			//unsigned int rcvSize = 0;
-			//rcvSize = recv(clntSocket, ClientInfos[i].Buffer.data(), ClientInfo::MAX_BUFFER_SIZE, 0);
-			
+		{			
 			std::pair<bool, int>rcvResult =
 				CustomRecv(clntSocket, ClientInfos[i].Buffer.data(), ClientInfo::MAX_BUFFER_SIZE, 0, ClientInfos[i]);
 			
-			if (rcvResult.second == SOCKET_ERROR)
-			{
-				std::cout << "recv error" << std::endl;
-				RemoveClntSocket(i);
-				continue;
-			}
-			else if (rcvResult.second == 0)
+			if (rcvResult.second == 0)
 			{
 				std::cout << "disconnect" << std::endl;
 				RemoveClntSocket(i);

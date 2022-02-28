@@ -50,7 +50,7 @@ void Outsourcer::CreatingChattingroom(const std::string& RoomName, const int Cln
 			if (buildings[i]->IsThereAnyEmptyRoom())//해당 건물에 빈 방이 있다면
 			{
 				buildings[i]->OccupyingRoom(RoomName, clientInfos[ClntIndex], MaxParticipant);
-				//방을 차지하게 해주고(채팅방 개설), 방 개설을 요청한 클라이언트를 방에 넣어준다. 
+				//방을 차지하게 해주고(채팅방 개설), 방 개설을 요청한 클라이언트를 방에 넣어준다.
 				//(방에 넣어주는 코드는 OccupyingRoom 함수에 존재)
 				isRoomExist = true;
 				break;
@@ -75,9 +75,12 @@ void Outsourcer::EnteringChattingroom(const int RoomIndex, ClientInfo& CommandRe
 {
 	std::vector<ChattingBuilding*>& buildings = TotalManager::Instance().GetBuildings();
 	int maxRoom = ChattingBuilding::MAX_ROOM_NUM;
-	buildings[RoomIndex / maxRoom]->EnteringRoom(RoomIndex % maxRoom, CommandRequestor);
+	int buildingIndex = RoomIndex / maxRoom;
+	int roomIndex = RoomIndex % maxRoom;
 	//RoomIndex/maxRoom -> 채팅빌딩 중 몇 번째 채팅빌딩인가?
 	//RoomIndex % maxRoom -> 앞에서 정한 채팅빌딩 중 몇 번째 방인가?
+
+	buildings[buildingIndex]->EnteringRoom(roomIndex, CommandRequestor);
 }
 
 void Outsourcer::DisconnectingClient()
