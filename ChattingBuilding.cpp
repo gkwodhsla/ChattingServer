@@ -32,11 +32,11 @@ void ChattingBuilding::ProcessingLogic()
 		{
 			for (int j = 0; j < ClientInfosEachRoom[i].size(); ++j)
 			{
-				if (ClientInfosEachRoom[i][j].IsSend)
+				if (ClientInfosEachRoom[i][j].IsSend)//전송중인 데이터가 남았다면 마저 보내게 해준다.
 				{
 					FD_SET(ClientInfosEachRoom[i][j].ClntSock, &WriteSet);
 				}
-				else
+				else //전송중인 데이터가 남았을 땐 recv를 잠시 미룬다.
 				{
 					FD_SET(ClientInfosEachRoom[i][j].ClntSock, &ReadSet);
 				}
@@ -81,7 +81,7 @@ void ChattingBuilding::EnteringRoom(const int RoomIndex, ClientInfo& Client)
 	if (IsEmptyRoom[RoomIndex]) //개설되지 않은 방에 접속하려는 경우 클라이언트에게 안된다고 알려준다.
 	{
 		roomEnterMsg = "You can't entering the room (room is not exist)\r\n";
-		send(Client.ClntSock, roomEnterMsg.c_str(), roomEnterMsg.size(), 0);
+		CustomSend(Client.ClntSock, roomEnterMsg.c_str(), roomEnterMsg.size(), 0, Client);
 		return;
 	}
 
@@ -96,12 +96,12 @@ void ChattingBuilding::EnteringRoom(const int RoomIndex, ClientInfo& Client)
 		//이렇게 구현했습니다.
 		roomEnterMsg = "Room name: " + RoomNames[RoomIndex] + "(" + std::to_string(++CurParticipantInRoom[RoomIndex]) +
 			"/" + std::to_string(MaximumParticipants[RoomIndex]) + ")";
-		send(Client.ClntSock, roomEnterMsg.c_str(), roomEnterMsg.size(), 0);
+		CustomSend(Client.ClntSock, roomEnterMsg.c_str(), roomEnterMsg.size(), 0, Client);
 	}
 	else //방 최대 인원을 넘어선 경우 접속하지 못 한다고 알려준다.
 	{
 		roomEnterMsg = "You can't enter this room (room fulled already)\r\n";
-		send(Client.ClntSock, roomEnterMsg.c_str(), roomEnterMsg.size(), 0);
+		CustomSend(Client.ClntSock, roomEnterMsg.c_str(), roomEnterMsg.size(), 0, Client);
 	}
 }
 
@@ -116,19 +116,27 @@ void ChattingBuilding::ProcessingAfterSelect()
 		for (int j = 0; j < ClientInfosEachRoom[i].size(); ++j)
 		{
 			SOCKET clntSock = ClientInfosEachRoom[i][j].ClntSock;
+			std::array<char, 1024>& buffer = ClientInfosEachRoom[i][j].Buffer;
 
 			if (FD_ISSET(clntSock, &WriteSet))  //데이터를 보내야하는 경우
 			{
+				std::pair<bool, int> sendResult =
+					CustomSend(clntSock, buffer.data(), ClientInfosEachRoom[i][j].SendingRightPos - ClientInfosEachRoom[i][j].SendingLeftPos,
+						0, ClientInfosEachRoom[i][j]);
 
+				if (sendResult.second == SOCKET_ERROR)
+				{
+					std::cout << "disconnect" << std::endl;
+					RemoveClntSocket(i, j);
+					continue;
+				}
 			}
 			else if (FD_ISSET(clntSock, &ReadSet)) // 데이터를 읽어야하는 경우
 			{
-				std::array<char, 1024>& buffer = ClientInfosEachRoom[i][j].Buffer;
-
 				std::pair<bool, int>rcvResult =
 					CustomRecv(clntSock, buffer.data(), ClientInfo::MAX_BUFFER_SIZE, 0, ClientInfosEachRoom[i][j]);
 
-				if (rcvResult.second == 0)
+				if (rcvResult.second == SOCKET_ERROR)
 				{
 					std::cout << "disconnect" << std::endl;
 					RemoveClntSocket(i, j);
@@ -147,7 +155,7 @@ void ChattingBuilding::ProcessingAfterSelect()
 					//(추후 로그인 기능까지 구현이 되면 Other Client Name에 실제 유저의 이름을 넣어줄 예정입니다.)
 					for (int k = 0; k < ClientInfosEachRoom[i].size(); ++k)
 					{
-						send(ClientInfosEachRoom[i][k].ClntSock, msgToSend.c_str(), msgToSend.size(), 0);
+						CustomSend(ClientInfosEachRoom[i][k].ClntSock, msgToSend.c_str(), msgToSend.size(), 0, ClientInfosEachRoom[i][k]);
 					}
 					//같은 방에 속한 모든 클라이언트(본인 포함)에게 채팅내용을 보내준다.
 
@@ -165,5 +173,7 @@ void ChattingBuilding::RemoveClntSocket(int RoomNumber, int Index)
 	TotalManager::Instance().MarkingForRemoveClntSocket(ClientInfosEachRoom[RoomNumber][Index].ClntSock);
 	//서브 쓰레드에서 메인 쓰레드에서 관리하는 소켓 정보를 직접 수정하면 문제가 생길 수 있을 것 같아
 	//마킹만 해놓고 직접 제거하는 것은 메인 쓰레드가 하게끔 구현했습니다.
+	--CurParticipantInRoom[RoomNumber];
+	//클라이언트 소켓이 해당 방을 떠난다면 참가 인원 수를 감소시켜줍니다.
 	ClientInfosEachRoom[RoomNumber].erase(ClientInfosEachRoom[RoomNumber].begin() + Index);
 }

@@ -7,6 +7,8 @@ class Outsourcer final
 public:
 	Outsourcer() = default;
 	virtual ~Outsourcer() = default;
+	Outsourcer(const Outsourcer&) = delete;
+	Outsourcer&operator=(const Outsourcer&) = delete;
 
 public:
 	void SendingCommandList(ClientInfo& CommandRequestor);

@@ -99,11 +99,11 @@ void TotalManager::MainLogic()
 		{
 			if (!ClientInfos[i].IsJoinRoom) //채팅방에 참가하지 않았다면 TotalManager에서 소켓을 관리해준다.
 			{
-				if (ClientInfos[i].IsSend)
+				if (ClientInfos[i].IsSend) //전송중인 데이터가 남았다면 마저 보내게 해준다.
 				{
 					FD_SET(ClientInfos[i].ClntSock, &WriteSet);
 				}
-				else
+				else //전송중인 데이터가 남았을 땐 recv를 잠시 미룬다.
 				{
 					FD_SET(ClientInfos[i].ClntSock, &ReadSet);
 				}
@@ -130,36 +130,41 @@ void TotalManager::ProcessingAfterSelect()
 		}
 		else //만약 클라이언트가 성공적으로 accept 되었다면 클라이언트 정보를 관리하는 벡터에 넣어준다.
 		{
-			std::string welcomeMsg{ "Welcome to chatting server!\r\nYou can login using Login [Username] Command\r\n" };
-			send(clntSocket, welcomeMsg.c_str(), welcomeMsg.size(), 0);
-			//로그인 기능은 추후 구현 예정.
-
 			std::cout << "New client connected: " << inet_ntoa(clntAddr.sin_addr)<<", " << ntohs(clntAddr.sin_port) << std::endl;
 			ClientInfos.emplace_back(clntSocket);
+			std::string welcomeMsg{ "Welcome to chatting server!\r\nYou can login using Login [Username] Command\r\n" };
+			
+			std::pair<bool, int> sndResult = CustomSend(clntSocket, welcomeMsg.c_str(), welcomeMsg.size(), 0, ClientInfos.back());
+			if (sndResult.second == SOCKET_ERROR)
+			{
+				RemoveClntSocket(ClientInfos.size() - 1);
+			}
+			//로그인 기능은 추후 구현 예정.
+
 		}
 	}
 
 	for (int i = 0; i < ClientInfos.size(); ++i)
 	{
 		SOCKET clntSocket = ClientInfos[i].ClntSock;
-		if (FD_ISSET(clntSocket, &WriteSet)) //만약 writeSet가 활성화 되어있다면 send 한다.
+		if (FD_ISSET(clntSocket, &WriteSet))
 		{
-			unsigned int sendSize = 0;
-			sendSize = send(clntSocket, ClientInfos[i].Buffer.data(), ClientInfos[i].SendingSize, 0);
-			ClientInfos[i].IsSend = false;
-			if (sendSize == SOCKET_ERROR)
+			unsigned int sendLen = ClientInfos[i].SendingRightPos - ClientInfos[i].SendingLeftPos;
+			std::pair<bool, int> sendResult = CustomSend(clntSocket, ClientInfos[i].Buffer.data(), sendLen, 0, ClientInfos[i]);
+			
+			if (sendResult.second == SOCKET_ERROR)
 			{
 				RemoveClntSocket(i);
 				continue;
-				//만일 전송에 문제가 생기면 소켓 정보를 관리 배열에서 지운다.
 			}
 		}
+		//만약 writeSet가 활성화 되어있다면 send 한다. (writeSet는 한 번에 전송을 실패했을 때 활성화된다!)
 		else if (FD_ISSET(clntSocket, &ReadSet)) //만약 readSet가 활성화 되어있다면 recv 한다.
 		{			
 			std::pair<bool, int>rcvResult =
 				CustomRecv(clntSocket, ClientInfos[i].Buffer.data(), ClientInfo::MAX_BUFFER_SIZE, 0, ClientInfos[i]);
 			
-			if (rcvResult.second == 0)
+			if (rcvResult.second == SOCKET_ERROR)
 			{
 				std::cout << "disconnect" << std::endl;
 				RemoveClntSocket(i);
@@ -171,8 +176,8 @@ void TotalManager::ProcessingAfterSelect()
 			{
 				ClientInfos[i].Buffer[rcvResult.second] = '\0';
 				std::cout << ClientInfos[i].Buffer.data() << std::endl;
-				std::string temp{ ClientInfos[i].Buffer.data() };
-				CommandOutsourcer->ExecutingCommand(ClientInfos[i], i, temp);
+				std::string command{ ClientInfos[i].Buffer.data() };
+				CommandOutsourcer->ExecutingCommand(ClientInfos[i], i, command);
 				//명령어를 성공적으로 받았다면 받은 명령어를 CommandOutsourcer에게 외주를 맡긴다.
 				//CommandOutsourcer는 받은 명령어를 파싱해 적절하게 처리해준다.
 				ZeroMemory(ClientInfos[i].Buffer.data(), ClientInfo::MAX_BUFFER_SIZE);

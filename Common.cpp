@@ -1,3 +1,4 @@
+#define _CRT_SECURE_NO_WARNINGS
 #include "Common.h"
 
 std::pair<bool, unsigned int> CustomRecv(SOCKET S, char* Buf, int Len, int Flags, ClientInfo& ClntInfo)
@@ -9,7 +10,7 @@ std::pair<bool, unsigned int> CustomRecv(SOCKET S, char* Buf, int Len, int Flags
 
 	if (rcvSize == 0 || rcvSize == SOCKET_ERROR)
 	{
-		return { false, 0 };
+		return { false, SOCKET_ERROR };
 	}
 
 	ClntInfo.RcvSize += rcvSize;
@@ -26,4 +27,40 @@ std::pair<bool, unsigned int> CustomRecv(SOCKET S, char* Buf, int Len, int Flags
 	}
 
 	return { false, ClntInfo.RcvSize };
+}
+
+std::pair<bool, unsigned int> CustomSend(SOCKET S, const char* Buf, int Len, int Flags, ClientInfo& ClntInfo)
+{
+	if (!ClntInfo.IsSend)
+	{
+		ClntInfo.SendingRightPos = Len;
+		ClntInfo.SendingLeftPos = 0;
+		ZeroMemory(ClntInfo.Buffer.data(), ClientInfo::MAX_BUFFER_SIZE);
+		strcpy(ClntInfo.Buffer.data(), Buf);
+	}
+	//최초 전송시 원래 보내고자했던 사이즈를 기록해두고, 버퍼에 내용물을 복사해둔다.
+	
+	int sndSize = 0;
+	
+	sndSize = send(S, ClntInfo.Buffer.data() + ClntInfo.SendingLeftPos, Len, Flags);
+
+	if (sndSize == SOCKET_ERROR)
+	{
+		return { false, SOCKET_ERROR };
+	}
+
+	if (sndSize == Len)//모든 데이터를 송신 버퍼에 복사 성공!
+	{
+		ClntInfo.IsSend = false;
+		return { true, sndSize };
+	}
+	else
+	{
+		ClntInfo.IsSend = true;
+		ClntInfo.SendingLeftPos += sndSize;
+		return { false, sndSize };
+	}
+	//데이터를 전부 송신버퍼에 복사하지 못한 경우
+	//IsSend를 true로 만들어 writeSet에 해당 소켓이 들어가
+	//다음 기회에 남은 데이터를 다시 보낼 수 있도록 한다.
 }
