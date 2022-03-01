@@ -22,7 +22,7 @@ void ChattingBuilding::ProcessingLogic()
 	struct timeval timeout;
 
 	timeout.tv_sec = 0;
-	timeout.tv_usec = ChattingBuilding::SOCKET_TIME_WAIT_MS;
+	timeout.tv_usec = ChattingBuilding::SOCKET_TIME_WAIT_US;
 
 	while (!ShouldLogicStop)
 	{
@@ -44,14 +44,17 @@ void ChattingBuilding::ProcessingLogic()
 				}
 			}
 		}
+		lock.unlock();
 		select(0, &ReadSet, &WriteSet, nullptr, &timeout);
+		lock.lock();
 		ProcessingAfterSelect();
 		lock.unlock();
 	}
 }
 
-void ChattingBuilding::OccupyingRoom(const std::string& RoomName, ClientInfo& Client, const int MaximumParticipant)
+unsigned int ChattingBuilding::OccupyingRoom(const std::string& RoomName, ClientInfo& Client, const int MaximumParticipant)
 {
+	unsigned int roomIndex = 0;
 	for (int i = 0; i < MAX_ROOM_NUM; ++i)
 	{
 		if (IsEmptyRooms[i])
@@ -61,9 +64,12 @@ void ChattingBuilding::OccupyingRoom(const std::string& RoomName, ClientInfo& Cl
 			MaximumParticipants[i] = MaximumParticipant;
 			RoomCreatingTimes[i] = GetCurrentSystemTime();
 			EnteringRoom(i, Client);
+			roomIndex = i;
 			break;
 		}
 	}
+	return roomIndex;
+
 }
 
 bool ChattingBuilding::IsThereAnyEmptyRoom()
@@ -92,7 +98,7 @@ void ChattingBuilding::EnteringRoom(const int RoomIndex, ClientInfo& Client)
 	{
 		Client.IsJoinRoom = true;
 		lock.lock();
-		ClientInfosEachRoom[RoomIndex].emplace_back(Client.ClntSock);
+		ClientInfosEachRoom[RoomIndex].emplace_back(Client.ClntSock, Client.Name);
 		ClientInfosEachRoom[RoomIndex].back().EnteringTime = GetCurrentSystemTime();
 		lock.unlock();
 		//소켓 디스크립터만 복사해 새롭게 정보를 만들어 넣어준다.
@@ -153,7 +159,8 @@ void ChattingBuilding::ProcessingAfterSelect()
 				{
 					buffer.data()[rcvResult.second] = '\0';
 
-					std::string msgToSend = std::string("\r\nOther Client Name: ") + std::string(buffer.data(), buffer.data() + rcvResult.second) + "\r\n";
+					std::string msgToSend = "\r\n" + ClientInfosEachRoom[i][j].Name + ": "
+						+ std::string(buffer.data(), buffer.data() + rcvResult.second) + "\r\n";
 					//메세지의 형식은 다른 클라이언트 이름: 메시지 내용 이다.
 					//e.g.) HJO: Hello world
 					//(추후 로그인 기능까지 구현이 되면 Other Client Name에 실제 유저의 이름을 넣어줄 예정입니다.)

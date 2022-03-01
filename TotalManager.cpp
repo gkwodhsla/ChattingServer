@@ -130,9 +130,13 @@ void TotalManager::ProcessingAfterSelect()
 		}
 		else //만약 클라이언트가 성공적으로 accept 되었다면 클라이언트 정보를 관리하는 벡터에 넣어준다.
 		{
-			std::cout << "New client connected: " << inet_ntoa(clntAddr.sin_addr)<<", " << ntohs(clntAddr.sin_port) << std::endl;
-			ClientInfos.emplace_back(clntSocket);
-			std::string welcomeMsg{ "Welcome to chatting server!\r\nYou can login using Login [Username] Command\r\n" };
+			char* clntIpv4 = inet_ntoa(clntAddr.sin_addr);
+			u_short clntPort = ntohs(clntAddr.sin_port);
+
+			std::cout << "New client connected: " << clntIpv4 <<", " << clntPort << std::endl;
+			ClientInfos.emplace_back(clntSocket, "");
+			ClientInfos.back().ConnectionPoint += std::string(clntIpv4) + ":" + std::to_string(ntohs(clntPort));
+			std::string welcomeMsg{ "Welcome to chatting server!\r\nPlease login using Login [Username] Command\r\n" };
 			
 			std::pair<bool, int> sndResult = CustomSend(clntSocket, welcomeMsg.c_str(), welcomeMsg.size(), 0, ClientInfos.back());
 			if (sndResult.second == SOCKET_ERROR)

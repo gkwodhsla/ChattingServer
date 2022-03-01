@@ -1,6 +1,22 @@
 ﻿  ChattingBuilding.cpp
-D:\Study\ChattingServer\ChattingServerHJO\Project1\ChattingBuilding.cpp(87,83): warning C4267: '인수': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-D:\Study\ChattingServer\ChattingServerHJO\Project1\ChattingBuilding.cpp(103,83): warning C4267: '인수': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-D:\Study\ChattingServer\ChattingServerHJO\Project1\ChattingBuilding.cpp(108,83): warning C4267: '인수': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-D:\Study\ChattingServer\ChattingServerHJO\Project1\ChattingBuilding.cpp(162,119): warning C4267: '인수': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+D:\Study\ChattingServer\ChattingServerHJO\Project1\ChattingBuilding.cpp(89,83): warning C4267: '인수': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+D:\Study\ChattingServer\ChattingServerHJO\Project1\ChattingBuilding.cpp(105,83): warning C4267: '인수': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+D:\Study\ChattingServer\ChattingServerHJO\Project1\ChattingBuilding.cpp(110,83): warning C4267: '인수': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+D:\Study\ChattingServer\ChattingServerHJO\Project1\ChattingBuilding.cpp(164,119): warning C4267: '인수': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+  Common.cpp
+  Outsourcer.cpp
+D:\Study\ChattingServer\ChattingServerHJO\Project1\Outsourcer.cpp(12,134): warning C4267: '인수': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+D:\Study\ChattingServer\ChattingServerHJO\Project1\Outsourcer.cpp(42,93): warning C4267: '인수': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+D:\Study\ChattingServer\ChattingServerHJO\Project1\Outsourcer.cpp(58,93): warning C4267: '인수': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+D:\Study\ChattingServer\ChattingServerHJO\Project1\Outsourcer.cpp(79,93): warning C4267: '인수': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+D:\Study\ChattingServer\ChattingServerHJO\Project1\Outsourcer.cpp(131,93): warning C4267: '인수': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+D:\Study\ChattingServer\ChattingServerHJO\Project1\Outsourcer.cpp(196,94): warning C4267: '인수': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+D:\Study\ChattingServer\ChattingServerHJO\Project1\Outsourcer.cpp(217,94): warning C4267: '인수': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+D:\Study\ChattingServer\ChattingServerHJO\Project1\Outsourcer.cpp(223,94): warning C4267: '인수': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+  TotalManager.cpp
+D:\Study\ChattingServer\ChattingServerHJO\Project1\TotalManager.cpp(22,37): warning C4267: '초기화 중': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+D:\Study\ChattingServer\ChattingServerHJO\Project1\TotalManager.cpp(137,120): warning C4267: '인수': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+D:\Study\ChattingServer\ChattingServerHJO\Project1\TotalManager.cpp(140,44): warning C4267: '인수': 'size_t'에서 'int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+  main.cpp
+  코드를 생성하고 있습니다...
   Project1.vcxproj -> D:\Study\ChattingServer\ChattingServerHJO\x64\Debug\Project1.exe
