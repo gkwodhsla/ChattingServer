@@ -64,3 +64,12 @@ std::pair<bool, unsigned int> CustomSend(SOCKET S, const char* Buf, int Len, int
 	//IsSend를 true로 만들어 writeSet에 해당 소켓이 들어가
 	//다음 기회에 남은 데이터를 다시 보낼 수 있도록 한다.
 }
+
+std::string GetCurrentSystemTime()
+{
+	__time64_t curTime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+	tm tm;
+	localtime_s(&tm, &curTime);
+	
+	return std::to_string(tm.tm_hour) + ":" + std::to_string(tm.tm_min);
+}

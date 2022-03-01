@@ -27,14 +27,23 @@ public:
 	static const unsigned int MAX_PARTICIPANT_EACH_ROOM = 16;
 	static const int SOCKET_TIME_WAIT_MS = 100;
 
+public:
+	const std::array<std::string, MAX_ROOM_NUM>& GetRoomNames() const { return RoomNames; }
+	const std::array<std::string, MAX_ROOM_NUM>& GetRoomCreatingTimes() const { return RoomCreatingTimes; }
+	const std::array<unsigned int, MAX_ROOM_NUM>& GetMaximumParticipants() const { return MaximumParticipants; }
+	const std::array<unsigned int, MAX_ROOM_NUM>& GetCurParticipantInRooms() const { return CurParticipantInRooms; }
+	const std::array<bool, MAX_ROOM_NUM>& GetIsEmptyRooms() const { return IsEmptyRooms; }
+	const std::vector<std::string> GetUsersNameAndEnteringTime(unsigned int RoomIndex)const;
+
 private:
 	std::vector<ClientInfo> ClientInfosEachRoom[MAX_ROOM_NUM];
 	//ClientInfosEachRoom[i][j] -> i번째 방에서 채팅중인 j번째 클라이언트
-	std::string RoomNames[MAX_ROOM_NUM];
-	int MaximumParticipants[MAX_ROOM_NUM];
-	unsigned int CurParticipantInRoom[MAX_ROOM_NUM];
+	std::array<std::string, MAX_ROOM_NUM> RoomNames;
+	std::array<std::string, MAX_ROOM_NUM> RoomCreatingTimes;
+	std::array<unsigned int, MAX_ROOM_NUM> MaximumParticipants;
 	//사용자가 정한 최대 접속인원 수
-	bool IsEmptyRoom[MAX_ROOM_NUM];
+	std::array<unsigned int, MAX_ROOM_NUM> CurParticipantInRooms;
+	std::array<bool, MAX_ROOM_NUM> IsEmptyRooms;
 	fd_set ReadSet, WriteSet;
 	std::atomic<bool> ShouldLogicStop;
 	std::mutex lock;

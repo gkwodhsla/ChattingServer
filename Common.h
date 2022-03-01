@@ -1,5 +1,6 @@
 #pragma once
 #include <array>
+#include <chrono>
 #include <string>
 #include <thread>
 #include <vector>
@@ -8,15 +9,16 @@ struct ClientInfo
 {
 	static const unsigned int MAX_BUFFER_SIZE = 1024;
 	static const unsigned int CRLR_SIZE = 2;
-	ClientInfo():Name(""), IsSend(false), IsJoinRoom(false), 
+	ClientInfo():Name("TempName"), EnteringTime(""), IsSend(false), IsJoinRoom(false),
 		WillBeRemoved(false), SendingLeftPos(0), RcvSize(0), SendingRightPos(0) {}
 	
 	virtual ~ClientInfo() = default;
-	ClientInfo(SOCKET SocketDiscriptor) :ClntSock(SocketDiscriptor), Name(""), IsSend(false), IsJoinRoom(false),
+	ClientInfo(SOCKET SocketDiscriptor) :ClntSock(SocketDiscriptor), Name("TempName"), EnteringTime(""), IsSend(false), IsJoinRoom(false),
 		WillBeRemoved(false), SendingLeftPos(0), RcvSize(0), SendingRightPos(0) {}
 	SOCKET ClntSock;
 	std::array<char, ClientInfo::MAX_BUFFER_SIZE> Buffer;
 	std::string Name;
+	std::string EnteringTime;
 	bool IsSend; //이 플래그가 true일 때만 메시지를 클라이언트에게 보낸다.
 	bool IsJoinRoom; //이 플래그가 false일 때만 메인쓰레드에서 세트에 소켓을 넣어준다.
 	bool WillBeRemoved; //채팅방에 접속한 상태에서 클라이언트 연결이 끊기면 해당 플래그가 true가되고,
@@ -37,3 +39,5 @@ std::pair<bool, unsigned int> CustomSend(SOCKET S, const char* Buf, int Len, int
 //논블로킹 소켓 환경에서 send호출 시 데이터를 전부 못 보내는 경우가 생기기 때문에
 //이를 처리해주기 위해 제작했습니다.
 //bool값은 데이터를 전부 보냈는지, 뒤는 실제로 send호출 시 반환된 값입니다.
+
+std::string GetCurrentSystemTime();
