@@ -9,6 +9,14 @@
 
 void Outsourcer::ExecutingCommand(ClientInfo& CommandRequestor, const int ClientIndex, std::string& Command)
 {
+	if (CommandRequestor.IsJoinRoom && Command[0] == '/')
+	{
+		ExecutingChattingRoomCommand(CommandRequestor, Command);
+		return;
+	}
+	//만약 방에 참가한 클라이언트의 명령의 맨 처음 문자가 /로 시작한다면 채팅방전용 명령이기 때문에
+	//ExecutingChattingRoomCommand을 호출해줍니다.
+
 	std::transform(Command.begin(), Command.end(), Command.begin(),
 		[](unsigned char c) { return tolower(c); });
 	//우선 입력받은 명령어를 모두 소문자로 바꾼다.
@@ -47,16 +55,8 @@ void Outsourcer::ExecutingCommand(ClientInfo& CommandRequestor, const int Client
 		}
 		else if (tokens[0] == "st")
 		{
-			bool isThereAlphabet = CheckingAlphabetInStr(tokens[1]);
-			if (isThereAlphabet) //방 사이즈에 정수가 아닌 다른 값이 들어온다면 방 생성 불가!
-			{
-				std::string failMsg{ "\r\nRoom Index only accept numeric number(0~)\r\n" };
-				CustomSend(CommandRequestor.ClientSock, failMsg.c_str(), failMsg.size(), 0, CommandRequestor);
-			}
-			else
-			{
-				SendingChattingroomInfo(CommandRequestor, std::stoul(tokens[1], nullptr, 0));
-			}
+			SendingChattingroomInfo(CommandRequestor, tokens[1]);
+			
 		}
 		else if (tokens[0] == "pf")
 		{
@@ -113,18 +113,75 @@ void Outsourcer::ExecutingCommand(ClientInfo& CommandRequestor, const int Client
 	}
 }
 
+void Outsourcer::ExecutingChattingRoomCommand(ClientInfo& CommandRequestor, std::string& Command)
+{
+	std::transform(Command.begin(), Command.end(), Command.begin(),
+		[](unsigned char c) { return tolower(c); });
+	//우선 입력받은 명령어를 모두 소문자로 바꾼다.
 
+	std::vector<std::string> tokens = Tokenizing(Command);
+	
+	if (tokens[0] == "/h")
+	{
+		SendingCommandList(CommandRequestor);
+	}
+	else if (tokens[0] == "/us")
+	{
+		SendingUserList(CommandRequestor);
+	}
+	else if (tokens[0] == "/lt")
+	{
+		SendingChattingroomList(CommandRequestor);
+	}
+	else if (tokens[0] == "/st")
+	{
+		SendingChattingroomInfo(CommandRequestor, tokens[1]);
+	}
+	else if (tokens[0] == "/pf")
+	{
+		SendingUserInfo(CommandRequestor, tokens[1]);
+	}
+	else if (tokens[0] == "/to")
+	{
+	//	std::string msg;
+	//	for (int i = 2; i < tokens.size(); ++i)
+	//	{
+	//		msg += tokens[i];
+	//	}
+	//	//토큰으로 조각난 메시지들을 하나의 메시지로 만들어 클라이언트에게 보내줍니다.
+	//	SendingMail(CommandRequestor, tokens[1], msg);
+	}
+	else if (tokens[0] == "/in")
+	{
+
+	}
+	else if (tokens[0] == "/q")
+	{
+
+	}
+	else if (tokens[0] == "/x")
+	{
+
+	}
+}
 
 
 void Outsourcer::SendingCommandList(ClientInfo& CommandRequestor)
 {
-	std::pair<bool, int> sendResult = CustomSend(CommandRequestor.ClientSock, CommandList.c_str(), CommandList.size(), 0, CommandRequestor);
+	if (CommandRequestor.IsJoinRoom)
+	{
+		CustomSend(CommandRequestor.ClientSock, CommandListForRoom.c_str(), CommandListForRoom.size(), 0, CommandRequestor);
+	}
+	else
+	{
+		CustomSend(CommandRequestor.ClientSock, CommandList.c_str(), CommandList.size(), 0, CommandRequestor);
+	}
 	std::cout << "Send command list to requesting client" << std::endl;
 }
 
 void Outsourcer::SendingUserList(ClientInfo& CommandRequestor)
 {
-	const std::vector<ClientInfo>& userInfos = TotalManager::Instance().GetClientInfos();
+	const std::vector<ClientInfo> userInfos = TotalManager::Instance().GetClientInfos();
 
 	std::string sendMsg = "\r\n";
 	for (int i = 0; i < userInfos.size(); ++i)//유저 정보를 순회하며 메시지를 완성 시킵니다.
@@ -137,7 +194,7 @@ void Outsourcer::SendingUserList(ClientInfo& CommandRequestor)
 
 void Outsourcer::SendingChattingroomList(ClientInfo& CommandRequestor)
 {
-	std::vector<ChattingBuilding*>& buildings = TotalManager::Instance().GetBuildings();
+	std::vector<ChattingBuilding*> buildings = TotalManager::Instance().GetBuildings();
 
 	for (int i = 0; i < buildings.size(); ++i)
 	{
@@ -161,16 +218,24 @@ void Outsourcer::SendingChattingroomList(ClientInfo& CommandRequestor)
 	std::cout << "Send chattingroom list to client" << std::endl;
 }
 
-void Outsourcer::SendingChattingroomInfo(ClientInfo& CommandRequestor, unsigned int RoomIndex)
+void Outsourcer::SendingChattingroomInfo(ClientInfo& CommandRequestor, const std::string& RoomIndex)
 {
+	bool isThereAlphabet = CheckingAlphabetInStr(RoomIndex);
+	if (isThereAlphabet) //방 사이즈에 정수가 아닌 다른 값이 들어온다면 방 생성 불가!
+	{
+		std::string failMsg{ "\r\nRoom Index only accept numeric number(0~)\r\n" };
+		CustomSend(CommandRequestor.ClientSock, failMsg.c_str(), failMsg.size(), 0, CommandRequestor);
+		return;
+	}
+	unsigned int roomIndex = std::stoul(RoomIndex, nullptr, 0);
 	std::vector<ChattingBuilding*> buildings = TotalManager::Instance().GetBuildings();
-	unsigned int whichBuilding = RoomIndex / ChattingBuilding::MAX_ROOM_NUM;
-	unsigned int whichRoom = RoomIndex % ChattingBuilding::MAX_ROOM_NUM;
+	unsigned int whichBuilding = roomIndex / ChattingBuilding::MAX_ROOM_NUM;
+	unsigned int whichRoom = roomIndex % ChattingBuilding::MAX_ROOM_NUM;
 	//RoomIndex/maxRoom -> 채팅빌딩 중 몇 번째 채팅빌딩인가?
 	//RoomIndex % maxRoom -> 앞에서 정한 채팅빌딩 중 몇 번째 방인가?
 	
 	std::string sendMsg = "";
-	if (buildings.size() * ChattingBuilding::MAX_ROOM_NUM - 1 < RoomIndex ||
+	if (buildings.size() * ChattingBuilding::MAX_ROOM_NUM - 1 < roomIndex ||
 		buildings[whichBuilding]->GetIsEmptyRooms()[whichRoom])
 	{
 		sendMsg = "Room that you asking is not exist\r\n";
@@ -185,11 +250,11 @@ void Outsourcer::SendingChattingroomInfo(ClientInfo& CommandRequestor, unsigned 
 		const std::array<std::string, ChattingBuilding::MAX_ROOM_NUM> roomName = buildings[whichBuilding]->GetRoomNames();
 		const std::array<std::string, ChattingBuilding::MAX_ROOM_NUM> creatingTime = buildings[whichBuilding]->GetRoomCreatingTimes();
 
-		sendMsg = "[" + std::to_string(RoomIndex) + "]" + std::to_string(curParticipant[whichRoom])
+		sendMsg = "[" + std::to_string(roomIndex) + "]" + std::to_string(curParticipant[whichRoom])
 			+ "/" + std::to_string(maxParticipant[whichRoom]) + " Room name: " +
 			roomName[whichRoom] + " Creating time: " + creatingTime[whichRoom] + "\r\n";
 
-		const std::vector<std::string> userInfos = buildings[whichBuilding]->GetUsersNameAndEnteringTime(RoomIndex);
+		const std::vector<std::string> userInfos = buildings[whichBuilding]->GetUsersNameAndEnteringTime(roomIndex);
 		for (int i = 0; i < userInfos.size(); ++i)
 		{
 			sendMsg += userInfos[i];

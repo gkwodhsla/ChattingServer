@@ -1,4 +1,5 @@
 #include "ChattingBuilding.h"
+#include "Outsourcer.h"
 #include "TotalManager.h"
 #include <iostream>
 #include <chrono>
@@ -157,19 +158,30 @@ void ChattingBuilding::ProcessingAfterSelect()
 
 				if (recvResult.first)//클라이언트가 \r\n을 입력했다면
 				{
-					buffer.data()[recvResult.second] = '\0';
-
-					std::string msgToSend = "\r\n" + ClientInfosEachRoom[i][j].Name + ": "
-						+ std::string(buffer.data(), buffer.data() + recvResult.second) + "\r\n";
-					//메세지의 형식은 다른 클라이언트 이름: 메시지 내용 입니다.
-					//e.g.) HJO: Hello world
-					for (int k = 0; k < ClientInfosEachRoom[i].size(); ++k)
+					if (buffer.data()[0] == '/')
 					{
-						CustomSend(ClientInfosEachRoom[i][k].ClientSock, msgToSend.c_str(), msgToSend.size(), 0, ClientInfosEachRoom[i][k]);
+						std::string command = std::string(buffer.data(), buffer.data() + recvResult.second);
+						Outsourcer::Instance().ExecutingCommand(ClientInfosEachRoom[i][j], -1, command);
+						//2번 째 인자는 채팅방 명령 수행 시 무시됩니다.
+						//2번 째 인자는 TotalManager에서 방 만들기 명령을 수행했을 때만 사용됩니다.
+						//명령을 수행하는 함수를 여러개 만들면 사용할 때 헷갈릴듯하여 이렇게 구현했습니다.
 					}
-					//같은 방에 속한 모든 클라이언트(본인 포함)에게 채팅내용을 보내줍니다.
+					else
+					{
+						buffer.data()[recvResult.second] = '\0';
 
-					std::cout << "Thread ID: " << std::this_thread::get_id() << ", Room Name: " << RoomNames[i] << ", Content: " << ClientInfosEachRoom[i][j].Buffer.data() << std::endl;
+						std::string msgToSend = "\r\n" + ClientInfosEachRoom[i][j].Name + ": "
+							+ std::string(buffer.data(), buffer.data() + recvResult.second) + "\r\n";
+						//메세지의 형식은 다른 클라이언트 이름: 메시지 내용 입니다.
+						//e.g.) HJO: Hello world
+						for (int k = 0; k < ClientInfosEachRoom[i].size(); ++k)
+						{
+							CustomSend(ClientInfosEachRoom[i][k].ClientSock, msgToSend.c_str(), msgToSend.size(), 0, ClientInfosEachRoom[i][k]);
+						}
+						//같은 방에 속한 모든 클라이언트(본인 포함)에게 채팅내용을 보내줍니다.
+
+						std::cout << "Thread ID: " << std::this_thread::get_id() << ", Room Name: " << RoomNames[i] << ", Content: " << ClientInfosEachRoom[i][j].Buffer.data() << std::endl;
+					}
 					ZeroMemory(buffer.data(), ClientInfo::MAX_BUFFER_SIZE);
 					ClientInfosEachRoom[i][j].RecvSize = 0;
 				}
@@ -180,7 +192,9 @@ void ChattingBuilding::ProcessingAfterSelect()
 
 void ChattingBuilding::RemoveClientSocket(int RoomNumber, int Index)
 {
+	TotalManager::ClientInfoLock.lock();
 	TotalManager::Instance().RemoveClientSocket(ClientInfosEachRoom[RoomNumber][Index]);
+	TotalManager::ClientInfoLock.unlock();
 	--CurParticipantInRooms[RoomNumber];
 	//클라이언트 소켓이 해당 방을 떠난다면 참가 인원 수를 감소시켜줍니다.
 	ClientInfosEachRoom[RoomNumber].erase(ClientInfosEachRoom[RoomNumber].begin() + Index);

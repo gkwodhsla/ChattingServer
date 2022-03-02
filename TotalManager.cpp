@@ -4,11 +4,10 @@
 #include "TotalManager.h"
 #include <iostream>
 
-TotalManager::TotalManager():ListenSocket(0), CommandOutsourcer(nullptr)
+TotalManager::TotalManager():ListenSocket(0)
 {
 	Buildings.emplace_back(new ChattingBuilding());
 	SubThreads.emplace_back(&ChattingBuilding::ProcessingLogic, Buildings.back());
-	CommandOutsourcer = new Outsourcer();
 	FD_ZERO(&WriteSet);
 	FD_ZERO(&ReadSet);
 	InitServer();
@@ -16,9 +15,6 @@ TotalManager::TotalManager():ListenSocket(0), CommandOutsourcer(nullptr)
 
 TotalManager::~TotalManager()
 {
-	delete CommandOutsourcer;
-	CommandOutsourcer = nullptr;
-
 	int buildingSize = Buildings.size();
 	for (int i = 0; i < buildingSize; ++i)
 	{
@@ -50,7 +46,7 @@ void TotalManager::InitServer()
 	ZeroMemory(&serverAddrInfo, sizeof(serverAddrInfo));
 	serverAddrInfo.sin_addr.s_addr = htonl(INADDR_ANY);
 	serverAddrInfo.sin_family = AF_INET;
-	serverAddrInfo.sin_port = htons(8000);
+	serverAddrInfo.sin_port = htons(DEFAULT_PORT);
 	if (bind(ListenSocket, (SOCKADDR*)&serverAddrInfo, sizeof(serverAddrInfo)) == SOCKET_ERROR)
 	{
 		std::cout << "bind failed..." << std::endl;
@@ -104,6 +100,7 @@ void TotalManager::ProcessingAfterSelect()
 		AcceptingNewClient();
 	}
 
+	ClientInfoLock.lock();
 	for (int i = 0; i < ClientInfos.size(); ++i)
 	{
 		SOCKET clientSocket = ClientInfos[i].ClientSock;
@@ -137,7 +134,7 @@ void TotalManager::ProcessingAfterSelect()
 				ClientInfos[i].Buffer[recvResult.second] = '\0';
 				std::cout << ClientInfos[i].Buffer.data() << std::endl;
 				std::string command{ ClientInfos[i].Buffer.data() };
-				CommandOutsourcer->ExecutingCommand(ClientInfos[i], i, command);
+				Outsourcer::Instance().ExecutingCommand(ClientInfos[i], i, command);
 				//명령어를 성공적으로 받았다면 받은 명령어를 CommandOutsourcer에게 외주를 맡깁니다.
 				//CommandOutsourcer는 받은 명령어를 파싱해 적절하게 처리해줍니다.
 				ZeroMemory(ClientInfos[i].Buffer.data(), ClientInfo::MAX_BUFFER_SIZE);
@@ -146,6 +143,7 @@ void TotalManager::ProcessingAfterSelect()
 			}
 		}
 	}
+	ClientInfoLock.unlock();
 }
 
 void TotalManager::RemoveClientSocket(int index)

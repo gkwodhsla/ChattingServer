@@ -5,6 +5,9 @@
 #include <thread>
 #include <vector>
 #include <WinSock2.h>
+
+const short DEFAULT_PORT = 8000;
+
 struct ClientInfo
 {
 	ClientInfo();

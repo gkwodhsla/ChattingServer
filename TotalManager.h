@@ -2,6 +2,7 @@
 #pragma comment(lib, "ws2_32")
 
 #include "Common.h"
+#include <mutex>
 
 class Outsourcer;
 class ChattingBuilding;
@@ -31,6 +32,9 @@ public:
 	std::vector<std::thread>& GetSubThreads() { return SubThreads; }
 	const std::vector<std::thread>& GetSubThreads() const { return SubThreads; }
 
+public:
+	static inline std::mutex ClientInfoLock;
+
 private:
 	TotalManager();
 	virtual ~TotalManager();
@@ -44,7 +48,6 @@ private:
 	std::vector<ClientInfo> ClientInfos;
 	std::vector<ChattingBuilding*> Buildings;
 	std::vector<std::thread> SubThreads;
-	Outsourcer* CommandOutsourcer;
 	fd_set WriteSet;
 	fd_set ReadSet;
 };
