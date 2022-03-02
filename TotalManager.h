@@ -20,11 +20,8 @@ public:
 public:
 	void InitServer();
 	void MainLogic();
-	void MarkingForRemoveClientSocket(SOCKET SocketDescriptor);
-	//ClientInfos 중 지워져야 할 클라이언트 정보를 마킹합니다.
-	//마킹된 정보는 MainLogic에서 지워줍니다.
-	//서브 쓰레드에서 메인 쓰레드의 자원을 함부로 건들면 문제가 생길 것 같아
-	//서브 쓰레드에선 마킹만 해두고 직접 지우는건 메인 쓰레드에서 하게 했습니다.
+	void RemoveClientSocket(int index);
+	void RemoveClientSocket(const ClientInfo& Info);
 
 public:
 	std::vector<ClientInfo>& GetClientInfos() { return ClientInfos; }
@@ -40,7 +37,6 @@ private:
 
 private:
 	void ProcessingAfterSelect();
-	void RemoveClientSocket(int index);
 	void AcceptingNewClient();
 
 private:

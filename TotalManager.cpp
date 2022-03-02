@@ -63,33 +63,10 @@ void TotalManager::InitServer()
 	ioctlsocket(ListenSocket, FIONBIO, &on);
 }
 
-void TotalManager::MarkingForRemoveClientSocket(SOCKET SocketDescriptor)
-{
-	for (int i = 0; i < ClientInfos.size(); ++i)
-	{
-		if (SocketDescriptor == ClientInfos[i].ClientSock)
-		{
-			ClientInfos[i].WillBeRemoved = true;
-			break;
-		}
-	}
-}
-
 void TotalManager::MainLogic()
 {
 	while (1)
 	{
-		for (int i = 0; i < ClientInfos.size(); ++i)
-		{
-			if (ClientInfos[i].WillBeRemoved)
-			{
-				RemoveClientSocket(i);
-				i = -1;
-			}
-		}
-		//채팅방에서 연결이 끊겨 소켓 정보가 관리 배열(ClientInfos)에서 지워져야 한다고 마킹이 되어있다면
-		//<마킹되어 있는 소켓 정보>들을 <전부 제거>합니다.
-
 		FD_ZERO(&WriteSet);
 		FD_ZERO(&ReadSet);
 
@@ -175,6 +152,24 @@ void TotalManager::RemoveClientSocket(int index)
 {
 	closesocket(ClientInfos[index].ClientSock);
 	ClientInfos.erase(ClientInfos.begin() + index);
+}
+
+void TotalManager::RemoveClientSocket(const ClientInfo& Info)
+{
+	int index = -1;
+	for (int i = 0; i < ClientInfos.size(); ++i)
+	{
+		if (Info.ClientSock == ClientInfos[i].ClientSock)
+		{
+			index = i;
+			break;
+		}
+	}
+	if (index != -1)
+	{
+		closesocket(ClientInfos[index].ClientSock);
+		ClientInfos.erase(ClientInfos.begin() + index);
+	}
 }
 
 void TotalManager::AcceptingNewClient()

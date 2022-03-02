@@ -23,8 +23,7 @@ struct ClientInfo
 	bool IsLogin;
 	bool IsSend; //이 플래그가 true일 때만 메시지를 클라이언트에게 보냅니다.
 	bool IsJoinRoom; //이 플래그가 false일 때만 메인쓰레드에서 세트에 소켓을 넣어줍니다.
-	bool WillBeRemoved; //채팅방에 접속한 상태에서 클라이언트 연결이 끊기면 해당 플래그가 true가되고,
-						//메인 쓰레드에서 해당 플래그가 true인지 검사해 실제로 제거합니다.
+	
 	unsigned int RoomIndex;
 	unsigned int SendingLeftPos; //전송을 시작할 시작 포인트입니다. (300byte를 보내야하는데 send가 100byte만 성공한 경우 이 값은 100이 됩니다.)
 	unsigned int SendingRightPos; //최초 send 요구 시 입력 받은 크기입니다.

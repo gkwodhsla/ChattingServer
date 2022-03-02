@@ -180,9 +180,7 @@ void ChattingBuilding::ProcessingAfterSelect()
 
 void ChattingBuilding::RemoveClientSocket(int RoomNumber, int Index)
 {
-	TotalManager::Instance().MarkingForRemoveClientSocket(ClientInfosEachRoom[RoomNumber][Index].ClientSock);
-	//서브 쓰레드에서 메인 쓰레드에서 관리하는 소켓 정보를 직접 수정하면 문제가 생길 수 있을 것 같아
-	//마킹만 해놓고 직접 제거하는 것은 메인 쓰레드가 하게끔 구현했습니다.
+	TotalManager::Instance().RemoveClientSocket(ClientInfosEachRoom[RoomNumber][Index]);
 	--CurParticipantInRooms[RoomNumber];
 	//클라이언트 소켓이 해당 방을 떠난다면 참가 인원 수를 감소시켜줍니다.
 	ClientInfosEachRoom[RoomNumber].erase(ClientInfosEachRoom[RoomNumber].begin() + Index);

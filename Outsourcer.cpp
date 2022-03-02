@@ -342,7 +342,7 @@ void Outsourcer::DisconnectingClient(ClientInfo& CommandRequestor)
 {
 	std::string msg = "Good bye~\r\n";
 	CustomSend(CommandRequestor.ClientSock, msg.c_str(), msg.size(), 0, CommandRequestor);
-	TotalManager::Instance().MarkingForRemoveClientSocket(CommandRequestor.ClientSock);
+	TotalManager::Instance().RemoveClientSocket(CommandRequestor);
 }
 
 bool Outsourcer::CheckingAlphabetInStr(const std::string& Str)

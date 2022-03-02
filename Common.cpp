@@ -3,12 +3,12 @@
 #include <sstream>
 
 ClientInfo::ClientInfo():ClientSock(0), Name("TempName"), EnteringTime(""), ConnectionPoint(""), IsSend(false), IsJoinRoom(false), IsLogin(false),
-WillBeRemoved(false), RoomIndex(LOBBY_INDEX), SendingLeftPos(0), RecvSize(0), SendingRightPos(0)
+RoomIndex(LOBBY_INDEX), SendingLeftPos(0), RecvSize(0), SendingRightPos(0)
 {
 	ZeroMemory(&Buffer, ClientInfo::MAX_BUFFER_SIZE);
 }
 
-ClientInfo::ClientInfo(SOCKET SocketDescriptor):ClientSock(SocketDescriptor), Name(""), EnteringTime(""), ConnectionPoint(""), IsSend(false), IsJoinRoom(false), IsLogin(false), WillBeRemoved(false), RoomIndex(LOBBY_INDEX), SendingLeftPos(0), RecvSize(0), SendingRightPos(0)
+ClientInfo::ClientInfo(SOCKET SocketDescriptor):ClientSock(SocketDescriptor), Name(""), EnteringTime(""), ConnectionPoint(""), IsSend(false), IsJoinRoom(false), IsLogin(false), RoomIndex(LOBBY_INDEX), SendingLeftPos(0), RecvSize(0), SendingRightPos(0)
 {
 	ZeroMemory(&Buffer, ClientInfo::MAX_BUFFER_SIZE);
 }
@@ -23,8 +23,7 @@ ClientInfo::ClientInfo(const ClientInfo& Other)
 	IsLogin = Other.IsLogin;
 	IsSend = Other.IsSend;
 	IsJoinRoom= Other.IsJoinRoom;
-	WillBeRemoved = Other.WillBeRemoved;
-
+	
 	RoomIndex = Other.RoomIndex;
 	SendingLeftPos = 0;
 	SendingRightPos = 0;
