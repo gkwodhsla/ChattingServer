@@ -55,46 +55,60 @@ void Outsourcer::ExecutingCommand(ClientInfo& CommandRequestor, const int Client
 		}
 		else if (tokens[0] == "st")
 		{
-			SendingChattingroomInfo(CommandRequestor, tokens[1]);
-			
+			if (tokens.size() >= 2)
+			{
+				SendingChattingroomInfo(CommandRequestor, tokens[1]);
+			}
 		}
 		else if (tokens[0] == "pf")
 		{
-			SendingUserInfo(CommandRequestor, tokens[1]);
+			if (tokens.size() >= 2)
+			{
+				SendingUserInfo(CommandRequestor, tokens[1]);
+			}
 		}
 		else if (tokens[0] == "to")
 		{
-			std::string msg;
-			for (int i = 2; i < tokens.size(); ++i)
+			if (tokens.size() >= 2)
 			{
-				msg += tokens[i] + " ";
+				std::string msg;
+				for (int i = 2; i < tokens.size(); ++i)
+				{
+					msg += tokens[i] + " ";
+				}
+				//토큰으로 조각난 메시지들을 하나의 메시지로 만들어 클라이언트에게 보내줍니다.
+				SendingMail(CommandRequestor, tokens[1], msg);
 			}
-			//토큰으로 조각난 메시지들을 하나의 메시지로 만들어 클라이언트에게 보내줍니다.
-			SendingMail(CommandRequestor, tokens[1], msg);
 		}
 		else if (tokens[0] == "o")
 		{
-			bool isThereAlphabet = CheckingAlphabetInStr(tokens[1]);
-			if (isThereAlphabet)
+			if (tokens.size() >= 3)
 			{
-				std::string failMsg{ "\r\nParticipant count only accept numeric number\r\n" };
-				CustomSend(CommandRequestor.ClientSock, failMsg.c_str(), failMsg.size(), 0, CommandRequestor);
-			}
-			//정수가 나와야하는데 알파벳이 하나라도 나온다면 다시 명령어를 입력해달라고 요청!
-			else if (std::stoi(tokens[1]) > 16 || std::stoi(tokens[1]) < 2)
-			{
-				std::string failMsg{ "\r\nparticipant range must (2 ~ 16)\r\n" };
-				CustomSend(CommandRequestor.ClientSock, failMsg.c_str(), failMsg.size(), 0, CommandRequestor);
-			}
-			//만약 최대 참석인원 수를 넘긴 숫자가 입력됐다면 다시 명령어를 입력해달라고 요청!
-			else
-			{
-				CreatingChattingroom(tokens[2], ClientIndex, std::stoi(tokens[1]), CommandRequestor);
+				bool isThereAlphabet = CheckingAlphabetInStr(tokens[1]);
+				if (isThereAlphabet)
+				{
+					std::string failMsg{ "\r\nParticipant count only accept numeric number\r\n" };
+					CustomSend(CommandRequestor.ClientSock, failMsg.c_str(), failMsg.size(), 0, CommandRequestor);
+				}
+				//정수가 나와야하는데 알파벳이 하나라도 나온다면 다시 명령어를 입력해달라고 요청!
+				else if (std::stoi(tokens[1]) > 16 || std::stoi(tokens[1]) < 2)
+				{
+					std::string failMsg{ "\r\nparticipant range must (2 ~ 16)\r\n" };
+					CustomSend(CommandRequestor.ClientSock, failMsg.c_str(), failMsg.size(), 0, CommandRequestor);
+				}
+				//만약 최대 참석인원 수를 넘긴 숫자가 입력됐다면 다시 명령어를 입력해달라고 요청!
+				else
+				{
+					CreatingChattingroom(tokens[2], ClientIndex, std::stoi(tokens[1]), CommandRequestor);
+				}
 			}
 		}
 		else if (tokens[0] == "j")
 		{
-			EnteringChattingroom(std::stoi(tokens[1]), CommandRequestor);
+			if (tokens.size() >= 2)
+			{
+				EnteringChattingroom(std::stoi(tokens[1]), CommandRequestor);
+			}
 		}
 		else if (tokens[0] == "x")
 		{
@@ -131,23 +145,32 @@ void Outsourcer::ExecutingChattingRoomCommand(ClientInfo& CommandRequestor, std:
 	}
 	else if (tokens[0] == "/st")
 	{
-		SendingChattingroomInfo(CommandRequestor, tokens[1]);
+		if (tokens.size() >= 2)
+		{
+			SendingChattingroomInfo(CommandRequestor, tokens[1]);
+		}
 	}
 	else if (tokens[0] == "/pf")
 	{
-		SendingUserInfo(CommandRequestor, tokens[1]);
+		if (tokens.size() >= 2)
+		{
+			SendingUserInfo(CommandRequestor, tokens[1]);
+		}
 	}
 	else if (tokens[0] == "/to")
 	{
-		std::string msg;
-		for (int i = 2; i < tokens.size(); ++i)
+		if (tokens.size() >= 2)
 		{
-			msg += tokens[i] + " ";
+			std::string msg;
+			for (int i = 2; i < tokens.size(); ++i)
+			{
+				msg += tokens[i] + " ";
+			}
+			//토큰으로 조각난 메시지들을 하나의 메시지로 만들어 클라이언트에게 보내줍니다.
+			TotalManager::ClientInfoLock.lock();
+			SendingMail(CommandRequestor, tokens[1], msg);
+			TotalManager::ClientInfoLock.unlock();
 		}
-		//토큰으로 조각난 메시지들을 하나의 메시지로 만들어 클라이언트에게 보내줍니다.
-		TotalManager::ClientInfoLock.lock();
-		SendingMail(CommandRequestor, tokens[1], msg);
-		TotalManager::ClientInfoLock.unlock();
 	}
 	else if (tokens[0] == "/in")
 	{
@@ -218,13 +241,14 @@ void Outsourcer::SendingChattingroomList(ClientInfo& CommandRequestor)
 void Outsourcer::SendingChattingroomInfo(ClientInfo& CommandRequestor, const std::string& RoomIndex)
 {
 	bool isThereAlphabet = CheckingAlphabetInStr(RoomIndex);
-	if (isThereAlphabet) //방 사이즈에 정수가 아닌 다른 값이 들어온다면 방 생성 불가!
+	if (isThereAlphabet)
 	{
 		std::string failMsg{ "\r\nRoom Index only accept numeric number(0~)\r\n" };
 		CustomSend(CommandRequestor.ClientSock, failMsg.c_str(), failMsg.size(), 0, CommandRequestor);
 		return;
 	}
-	unsigned int roomIndex = std::stoul(RoomIndex, nullptr, 0);
+	std::cout << "SendChatinfonum:"<<RoomIndex << std::endl;
+	unsigned int roomIndex = std::stoi(RoomIndex, nullptr, 0);
 	std::vector<ChattingBuilding*> buildings = TotalManager::Instance().GetBuildings();
 	unsigned int whichBuilding = roomIndex / ChattingBuilding::MAX_ROOM_NUM;
 	unsigned int whichRoom = roomIndex % ChattingBuilding::MAX_ROOM_NUM;
@@ -251,7 +275,7 @@ void Outsourcer::SendingChattingroomInfo(ClientInfo& CommandRequestor, const std
 			+ "/" + std::to_string(maxParticipant[whichRoom]) + " Room name: " +
 			roomName[whichRoom] + " Creating time: " + creatingTime[whichRoom] + "\r\n";
 
-		const std::vector<std::string> userInfos = buildings[whichBuilding]->GetUsersNameAndEnteringTime(roomIndex);
+		const std::vector<std::string> userInfos = buildings[whichBuilding]->GetUsersNameAndEnteringTime(whichRoom);
 		for (int i = 0; i < userInfos.size(); ++i)
 		{
 			sendMsg += userInfos[i];
