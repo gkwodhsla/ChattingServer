@@ -20,14 +20,15 @@ public:
 	void EnteringRoom(const int RoomIndex, ClientInfo& Client); //해당 방으로 참석 시킵니다.
 	void StopChattingroomLogic() { ShouldLogicStop = true; }
 
-private:
-	void ProcessingAfterSelect();
-	void RemoveClientSocket(int RoomNumber, int Index);
-
 public:
 	static const unsigned int MAX_ROOM_NUM = 4;
 	static const unsigned int MAX_PARTICIPANT_EACH_ROOM = 16;
-	static const int SOCKET_TIME_WAIT_US = 100;
+
+private:
+	void ProcessingAfterSelect();
+	void RemoveClientSocket(int RoomNumber, int Index);
+	void ResetRoomInfo(unsigned int roomIndex);
+	//방 폭파 시 해당 방의 정보를 모두 초기 상태로 리셋 시켜줍니다.
 
 public:
 	const std::array<std::string, MAX_ROOM_NUM>& GetRoomNames() const { return RoomNames; }

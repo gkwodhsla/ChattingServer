@@ -100,10 +100,6 @@ void Outsourcer::ExecutingCommand(ClientInfo& CommandRequestor, const int Client
 		{
 			DisconnectingClient(CommandRequestor);
 		}
-		else
-		{
-			//명령어를 제대로 입력하라고 클라이언트에게 메시지 보내주기.
-		}
 	}
 	else//로그인 하지 않은 상태에서 명령어를 입력하면 로그인을 먼저 하라고 알려줍니다.
 	{
@@ -162,11 +158,7 @@ void Outsourcer::ExecutingChattingRoomCommand(ClientInfo& CommandRequestor, std:
 	}
 	else if (tokens[0] == "/q")
 	{
-
-	}
-	else if (tokens[0] == "/x")
-	{
-
+		QuitRoom(CommandRequestor);
 	}
 }
 
@@ -415,6 +407,26 @@ void Outsourcer::DisconnectingClient(ClientInfo& CommandRequestor)
 	std::string msg = "Good bye~\r\n";
 	CustomSend(CommandRequestor.ClientSock, msg.c_str(), msg.size(), 0, CommandRequestor);
 	TotalManager::Instance().RemoveClientSocket(CommandRequestor);
+}
+
+void Outsourcer::QuitRoom(ClientInfo& CommandRequestor)
+{
+	TotalManager::ClientInfoLock.lock();
+	std::vector<ClientInfo>& infos = TotalManager::Instance().GetClientInfos();
+	for (auto& info : infos)
+	{
+		if (info.ClientSock == CommandRequestor.ClientSock)
+		{
+			info.IsJoinRoom = false;
+			info.RoomIndex = ClientInfo::LOBBY_INDEX;
+			info.EnteringTime = "";
+			break;
+		}
+	}
+	//방을 나가고자 하는 유저가 로비에서 다시 방에 진입할 수 있도록
+	//관련 데이터를 초기화 시켜줍니다.
+	TotalManager::ClientInfoLock.unlock();
+	//공유자원을 건드리기 때문에 lock을 걸었습니다.
 }
 
 bool Outsourcer::CheckingAlphabetInStr(const std::string& Str)

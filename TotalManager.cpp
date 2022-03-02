@@ -61,6 +61,10 @@ void TotalManager::InitServer()
 
 void TotalManager::MainLogic()
 {
+	struct timeval timeout;
+
+	timeout.tv_sec = 0;
+	timeout.tv_usec = SOCKET_TIME_WAIT_US;
 	while (1)
 	{
 		FD_ZERO(&WriteSet);
@@ -87,7 +91,7 @@ void TotalManager::MainLogic()
 				//(보내야 할 데이터가 아직 Buffer에 남아있는데 recv를 하면 Buffer가 오염되기 때문에)
 			}
 		}
-		select(0, &ReadSet, &WriteSet, nullptr, nullptr); // 하나라도 준비가 된 소켓이 있을 때 까지 대기합니다.
+		select(0, &ReadSet, &WriteSet, nullptr, &timeout); // 하나라도 준비가 된 소켓이 있을 때 까지 대기합니다.
 
 		ProcessingAfterSelect();
 	}

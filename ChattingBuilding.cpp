@@ -23,7 +23,7 @@ void ChattingBuilding::ProcessingLogic()
 	struct timeval timeout;
 
 	timeout.tv_sec = 0;
-	timeout.tv_usec = ChattingBuilding::SOCKET_TIME_WAIT_US;
+	timeout.tv_usec = SOCKET_TIME_WAIT_US;
 
 	while (!ShouldLogicStop)
 	{
@@ -164,6 +164,23 @@ void ChattingBuilding::ProcessingAfterSelect()
 						//2번 째 인자는 채팅방 명령 수행 시 무시됩니다.
 						//2번 째 인자는 TotalManager에서 방 만들기 명령을 수행했을 때만 사용됩니다.
 						//명령을 수행하는 함수를 여러개 만들면 사용할 때 헷갈릴듯하여 이렇게 구현했습니다.
+						if (buffer.data()[1] == 'q')
+						{
+							--CurParticipantInRooms[i];
+							//인원감소
+							ClientInfosEachRoom[i].erase(ClientInfosEachRoom[i].begin() + j);
+							//나간 인원 관리 배열에서 제거
+							if (ClientInfosEachRoom[i].size() == 0)
+							{
+								TotalManager::ClientInfoLock.lock();
+								ResetRoomInfo(i);
+								TotalManager::ClientInfoLock.unlock();
+							}
+							//방 참가 인원이 0명이 되면 방을 폭파 시킵니다.
+							continue;
+						}
+						//만약 나가는 명령이라면 사전 작업(인원감소, 유저 제거) 하고 명령처리를 맡깁니다.
+
 					}
 					else
 					{
@@ -200,8 +217,19 @@ void ChattingBuilding::RemoveClientSocket(int RoomNumber, int Index)
 	
 	if (CurParticipantInRooms[RoomNumber] == 0)
 	{
-		//방 폭파 코드 삽입
+		TotalManager::ClientInfoLock.lock();
+		ResetRoomInfo(RoomNumber);
+		TotalManager::ClientInfoLock.unlock();
 	}
+	//만약 참가 인원이 0명이면 방을 폭파 시킵니다.
+}
+
+void ChattingBuilding::ResetRoomInfo(unsigned int roomIndex)
+{
+	RoomNames[roomIndex] = "";
+	RoomCreatingTimes[roomIndex] = "";
+	MaximumParticipants[roomIndex] = 0;
+	IsEmptyRooms[roomIndex] = true;
 }
 
 const std::vector<std::string> ChattingBuilding::GetUsersNameAndEnteringTime(unsigned int RoomIndex) const

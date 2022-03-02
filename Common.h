@@ -7,7 +7,7 @@
 #include <WinSock2.h>
 
 const short DEFAULT_PORT = 8000;
-
+const unsigned int SOCKET_TIME_WAIT_US = 100;
 struct ClientInfo
 {
 	ClientInfo();
