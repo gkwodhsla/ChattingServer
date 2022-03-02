@@ -67,7 +67,7 @@ void Outsourcer::ExecutingCommand(ClientInfo& CommandRequestor, const int Client
 			std::string msg;
 			for (int i = 2; i < tokens.size(); ++i)
 			{
-				msg += tokens[i];
+				msg += tokens[i] + " ";
 			}
 			//토큰으로 조각난 메시지들을 하나의 메시지로 만들어 클라이언트에게 보내줍니다.
 			SendingMail(CommandRequestor, tokens[1], msg);
@@ -143,17 +143,22 @@ void Outsourcer::ExecutingChattingRoomCommand(ClientInfo& CommandRequestor, std:
 	}
 	else if (tokens[0] == "/to")
 	{
-	//	std::string msg;
-	//	for (int i = 2; i < tokens.size(); ++i)
-	//	{
-	//		msg += tokens[i];
-	//	}
-	//	//토큰으로 조각난 메시지들을 하나의 메시지로 만들어 클라이언트에게 보내줍니다.
-	//	SendingMail(CommandRequestor, tokens[1], msg);
+		std::string msg;
+		for (int i = 2; i < tokens.size(); ++i)
+		{
+			msg += tokens[i] + " ";
+		}
+		//토큰으로 조각난 메시지들을 하나의 메시지로 만들어 클라이언트에게 보내줍니다.
+		TotalManager::ClientInfoLock.lock();
+		SendingMail(CommandRequestor, tokens[1], msg);
+		TotalManager::ClientInfoLock.unlock();
 	}
 	else if (tokens[0] == "/in")
 	{
-
+		std::string msg = CommandRequestor.Name + " is invite you room " + std::to_string(CommandRequestor.RoomIndex) + "\r\n";
+		TotalManager::ClientInfoLock.lock();
+		SendingMail(CommandRequestor, tokens[1], msg);
+		TotalManager::ClientInfoLock.unlock();
 	}
 	else if (tokens[0] == "/q")
 	{
@@ -331,6 +336,7 @@ void Outsourcer::SendingMail(ClientInfo& CommandRequestor, const std::string& Na
 		return;
 	}
 	//자기자신에겐 귓속말을 보낼 수 없습니다.
+
 	std::vector<ClientInfo> userInfos = TotalManager::Instance().GetClientInfos();
 	for (int i = 0; i < userInfos.size(); ++i)
 	{
@@ -363,6 +369,7 @@ void Outsourcer::CreatingChattingroom(const std::string& RoomName, const int Cli
 				//방을 차지하게 해주고(채팅방 개설), 방 개설을 요청한 클라이언트를 방에 넣어줍니다.
 				//(방에 넣어주는 코드는 OccupyingRoom 함수에 존재)
 				CommandRequestor.RoomIndex = i * ChattingBuilding::MAX_ROOM_NUM + roomIndex;
+				EnteringChattingroom(CommandRequestor.RoomIndex, CommandRequestor);
 				isRoomExist = true;
 				break;
 			}
@@ -397,9 +404,9 @@ void Outsourcer::EnteringChattingroom(const int RoomIndex, ClientInfo& CommandRe
 		int roomIndex = RoomIndex % maxRoom;
 		//RoomIndex/maxRoom -> 채팅빌딩 중 몇 번째 채팅빌딩인가?
 		//RoomIndex % maxRoom -> 앞에서 정한 채팅빌딩 중 몇 번째 방인가?
-
-		buildings[buildingIndex]->EnteringRoom(roomIndex, CommandRequestor);
+		
 		CommandRequestor.RoomIndex = RoomIndex;
+		buildings[buildingIndex]->EnteringRoom(roomIndex, CommandRequestor);
 	}
 }
 

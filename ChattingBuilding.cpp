@@ -64,7 +64,6 @@ unsigned int ChattingBuilding::OccupyingRoom(const std::string& RoomName, Client
 			RoomNames[i] = RoomName;
 			MaximumParticipants[i] = MaximumParticipant;
 			RoomCreatingTimes[i] = GetCurrentSystemTime();
-			EnteringRoom(i, Client);
 			roomIndex = i;
 			break;
 		}
@@ -198,6 +197,11 @@ void ChattingBuilding::RemoveClientSocket(int RoomNumber, int Index)
 	--CurParticipantInRooms[RoomNumber];
 	//클라이언트 소켓이 해당 방을 떠난다면 참가 인원 수를 감소시켜줍니다.
 	ClientInfosEachRoom[RoomNumber].erase(ClientInfosEachRoom[RoomNumber].begin() + Index);
+	
+	if (CurParticipantInRooms[RoomNumber] == 0)
+	{
+		//방 폭파 코드 삽입
+	}
 }
 
 const std::vector<std::string> ChattingBuilding::GetUsersNameAndEnteringTime(unsigned int RoomIndex) const

@@ -16,15 +16,15 @@ ClientInfo::ClientInfo(SOCKET SocketDescriptor):ClientSock(SocketDescriptor), Na
 ClientInfo::ClientInfo(const ClientInfo& Other)
 {
 	ClientSock = Other.ClientSock;
-	ZeroMemory(&Buffer, ClientInfo::MAX_BUFFER_SIZE);
 	Name = Other.Name;
 	ConnectionPoint = Other.ConnectionPoint;
 	EnteringTime = Other.EnteringTime;
 	IsLogin = Other.IsLogin;
 	IsSend = Other.IsSend;
 	IsJoinRoom= Other.IsJoinRoom;
-	
 	RoomIndex = Other.RoomIndex;
+	
+	ZeroMemory(&Buffer, ClientInfo::MAX_BUFFER_SIZE);
 	SendingLeftPos = 0;
 	SendingRightPos = 0;
 	RecvSize = 0;
