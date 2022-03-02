@@ -11,7 +11,7 @@ public:
 	Outsourcer&operator=(const Outsourcer&) = delete;
 
 public:
-	void ExecutingCommand(ClientInfo& CommandRequestor, const int ClntIndex, std::string& Command);
+	void ExecutingCommand(ClientInfo& CommandRequestor, const int ClientIndex, std::string& Command);
 	//TotalManager는 이 함수를 통해 Outsourcer에게 명령어를 대신 처리하게 맡깁니다.
 
 private:
@@ -31,7 +31,7 @@ private:
 	//로그인을 처리해줍니다.
 	void SendingMail();
 	//특정 유저에게 귓속말을 보냅니다.
-	void CreatingChattingroom(const std::string& RoomName, const int ClntIndex, const int MaxParticipant, ClientInfo& CommandRequestor);
+	void CreatingChattingroom(const std::string& RoomName, const int ClientIndex, const int MaxParticipant, ClientInfo& CommandRequestor);
 	//클라이언트가 요청한 제목과 최대 참가인원을 참고해 채팅방을 만들어줍니다.
 	void EnteringChattingroom(const int RoomIndex, ClientInfo& CommandRequestor);
 	//채팅방에 진입합니다.
