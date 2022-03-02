@@ -30,7 +30,6 @@ void ChattingBuilding::ProcessingLogic()
 		FD_ZERO(&WriteSet);
 		FD_ZERO(&ReadSet);
 
-		lock.lock();
 		for (int i = 0; i < MAX_ROOM_NUM; ++i)
 		{
 			for (int j = 0; j < ClientInfosEachRoom[i].size(); ++j)
@@ -45,11 +44,8 @@ void ChattingBuilding::ProcessingLogic()
 				}
 			}
 		}
-		lock.unlock();
 		select(0, &ReadSet, &WriteSet, nullptr, &timeout);
-		lock.lock();
 		ProcessingAfterSelect();
-		lock.unlock();
 	}
 }
 
@@ -97,10 +93,9 @@ void ChattingBuilding::EnteringRoom(const int RoomIndex, ClientInfo& Client)
 	if (CurParticipantInRooms[RoomIndex] + 1 <= MaximumParticipants[RoomIndex]) //정상적으로 접속
 	{
 		Client.IsJoinRoom = true;
-		lock.lock();
+		std::lock_guard<std::mutex> lockGuard(lock);
 		ClientInfosEachRoom[RoomIndex].emplace_back(Client);
 		ClientInfosEachRoom[RoomIndex].back().EnteringTime = GetCurrentSystemTime();
-		lock.unlock();
 		//방 진입을 요청한 클라이언트의 정보를 복사해 요청한 방에 넣어줍니다.
 		//TotalManager 관리 배열에서 클라이언트를 직접 이동 시키면 한곳에서 관리가 어려울 것 같아서
 		//이렇게 구현했습니다.
@@ -121,6 +116,7 @@ ChattingBuilding::~ChattingBuilding()
 
 void ChattingBuilding::ProcessingAfterSelect()
 {
+	std::lock_guard<std::mutex> lockGuard(lock);
 	for (int i = 0; i < MAX_ROOM_NUM; ++i)
 	{
 		for (int j = 0; j < ClientInfosEachRoom[i].size(); ++j)
@@ -172,9 +168,8 @@ void ChattingBuilding::ProcessingAfterSelect()
 							//나간 인원 관리 배열에서 제거
 							if (ClientInfosEachRoom[i].size() == 0)
 							{
-								TotalManager::ClientInfoLock.lock();
+								std::lock_guard<std::mutex> lockGouard(TotalManager::ClientInfoLock);
 								ResetRoomInfo(i);
-								TotalManager::ClientInfoLock.unlock();
 							}
 							//방 참가 인원이 0명이 되면 방을 폭파 시킵니다.
 							continue;
@@ -208,24 +203,21 @@ void ChattingBuilding::ProcessingAfterSelect()
 
 void ChattingBuilding::RemoveClientSocket(int RoomNumber, int Index)
 {
-	TotalManager::ClientInfoLock.lock();
 	TotalManager::Instance().RemoveClientSocket(ClientInfosEachRoom[RoomNumber][Index]);
-	TotalManager::ClientInfoLock.unlock();
 	--CurParticipantInRooms[RoomNumber];
 	//클라이언트 소켓이 해당 방을 떠난다면 참가 인원 수를 감소시켜줍니다.
 	ClientInfosEachRoom[RoomNumber].erase(ClientInfosEachRoom[RoomNumber].begin() + Index);
 	
 	if (CurParticipantInRooms[RoomNumber] == 0)
 	{
-		TotalManager::ClientInfoLock.lock();
 		ResetRoomInfo(RoomNumber);
-		TotalManager::ClientInfoLock.unlock();
 	}
 	//만약 참가 인원이 0명이면 방을 폭파 시킵니다.
 }
 
 void ChattingBuilding::ResetRoomInfo(unsigned int roomIndex)
 {
+	std::lock_guard<std::mutex> lockGuard(TotalManager::ClientInfoLock);
 	RoomNames[roomIndex] = "";
 	RoomCreatingTimes[roomIndex] = "";
 	MaximumParticipants[roomIndex] = 0;

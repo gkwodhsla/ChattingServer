@@ -104,7 +104,7 @@ void TotalManager::ProcessingAfterSelect()
 		AcceptingNewClient();
 	}
 
-	ClientInfoLock.lock();
+	std::lock_guard<std::mutex> lockGuard(TotalManager::ClientInfoLock);
 	for (int i = 0; i < ClientInfos.size(); ++i)
 	{
 		SOCKET clientSocket = ClientInfos[i].ClientSock;
@@ -147,7 +147,6 @@ void TotalManager::ProcessingAfterSelect()
 			}
 		}
 	}
-	ClientInfoLock.unlock();
 }
 
 void TotalManager::RemoveClientSocket(int index)
@@ -158,6 +157,7 @@ void TotalManager::RemoveClientSocket(int index)
 
 void TotalManager::RemoveClientSocket(const ClientInfo& Info)
 {
+	std::lock_guard<std::mutex> lockGuard(TotalManager::ClientInfoLock);
 	int index = -1;
 	for (int i = 0; i < ClientInfos.size(); ++i)
 	{

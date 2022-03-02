@@ -167,17 +167,13 @@ void Outsourcer::ExecutingChattingRoomCommand(ClientInfo& CommandRequestor, std:
 				msg += tokens[i] + " ";
 			}
 			//토큰으로 조각난 메시지들을 하나의 메시지로 만들어 클라이언트에게 보내줍니다.
-			TotalManager::ClientInfoLock.lock();
 			SendingMail(CommandRequestor, tokens[1], msg);
-			TotalManager::ClientInfoLock.unlock();
 		}
 	}
 	else if (tokens[0] == "/in")
 	{
 		std::string msg = CommandRequestor.Name + " is invite you room " + std::to_string(CommandRequestor.RoomIndex) + "\r\n";
-		TotalManager::ClientInfoLock.lock();
 		SendingMail(CommandRequestor, tokens[1], msg);
-		TotalManager::ClientInfoLock.unlock();
 	}
 	else if (tokens[0] == "/q")
 	{
@@ -353,6 +349,7 @@ void Outsourcer::SendingMail(ClientInfo& CommandRequestor, const std::string& Na
 	}
 	//자기자신에겐 귓속말을 보낼 수 없습니다.
 
+	std::lock_guard<std::mutex> lockGuard(TotalManager::ClientInfoLock);
 	std::vector<ClientInfo> userInfos = TotalManager::Instance().GetClientInfos();
 	for (int i = 0; i < userInfos.size(); ++i)
 	{
@@ -435,7 +432,7 @@ void Outsourcer::DisconnectingClient(ClientInfo& CommandRequestor)
 
 void Outsourcer::QuitRoom(ClientInfo& CommandRequestor)
 {
-	TotalManager::ClientInfoLock.lock();
+	std::lock_guard<std::mutex>(TotalManager::ClientInfoLock);
 	std::vector<ClientInfo>& infos = TotalManager::Instance().GetClientInfos();
 	for (auto& info : infos)
 	{
@@ -449,8 +446,6 @@ void Outsourcer::QuitRoom(ClientInfo& CommandRequestor)
 	}
 	//방을 나가고자 하는 유저가 로비에서 다시 방에 진입할 수 있도록
 	//관련 데이터를 초기화 시켜줍니다.
-	TotalManager::ClientInfoLock.unlock();
-	//공유자원을 건드리기 때문에 lock을 걸었습니다.
 }
 
 bool Outsourcer::CheckingAlphabetInStr(const std::string& Str)
