@@ -19,12 +19,8 @@ void Outsourcer::ExecutingCommand(ClientInfo& CommandRequestor, const int Client
 	if (tokens[0] == "login")
 	{
 		std::string failMsg;
-		if (CommandRequestor.IsLogin) //이미 로그인 됐다면 실패!
-		{
-			failMsg = "You already login!\r\n";
-			CustomSend(CommandRequestor.ClientSock, failMsg.c_str(), failMsg.size(), 0, CommandRequestor);
-		}
-		else if (tokens.size() < CORRECT_LOGIN_TOKEN_NUM) //만약 login명령어만 입력하고 이름을 입력하지 않은 경우라면 실패!
+		
+		if (tokens.size() < CORRECT_LOGIN_TOKEN_NUM) //만약 login명령어만 입력하고 이름을 입력하지 않은 경우라면 실패!
 		{
 			failMsg = "Please enter the name\r\n";
 			CustomSend(CommandRequestor.ClientSock, failMsg.c_str(), failMsg.size(), 0, CommandRequestor);
@@ -68,7 +64,13 @@ void Outsourcer::ExecutingCommand(ClientInfo& CommandRequestor, const int Client
 		}
 		else if (tokens[0] == "to")
 		{
-			SendingMail();
+			std::string msg;
+			for (int i = 2; i < tokens.size(); ++i)
+			{
+				msg += tokens[i];
+			}
+			//토큰으로 조각난 메시지들을 하나의 메시지로 만들어 클라이언트에게 보내줍니다.
+			SendingMail(CommandRequestor, tokens[1], msg);
 		}
 		else if (tokens[0] == "o")
 		{
@@ -96,7 +98,7 @@ void Outsourcer::ExecutingCommand(ClientInfo& CommandRequestor, const int Client
 		}
 		else if (tokens[0] == "x")
 		{
-			DisconnectingClient();
+			DisconnectingClient(CommandRequestor);
 		}
 		else
 		{
@@ -228,14 +230,56 @@ void Outsourcer::SendingUserInfo(ClientInfo& CommandRequestor, const std::string
 
 void Outsourcer::Login(ClientInfo& CommandRequestor, const std::string& Name)
 {
+	std::string failMsg = "";
+	if (CommandRequestor.IsLogin)
+	{
+		failMsg = "You already login!\r\n";
+		CustomSend(CommandRequestor.ClientSock, failMsg.c_str(), failMsg.size(), 0, CommandRequestor);
+		return;
+	}
+	//<이미 로그인 됐다>면 실패!
+	std::vector<ClientInfo> clientInfos = TotalManager::Instance().GetClientInfos();
+	for (int i = 0; i < clientInfos.size(); ++i)
+	{
+		if (clientInfos[i].Name == Name)
+		{
+			failMsg = "Other user already using that name. please try another name.\r\n";
+			CustomSend(CommandRequestor.ClientSock, failMsg.c_str(), failMsg.size(), 0, CommandRequestor);
+			return;
+		}
+	}
+	//<중복되는 이름>이 있는 경우도 로그인 실패입니다.
+
 	CommandRequestor.IsLogin = true;
 	CommandRequestor.Name = Name;
 	std::string sendMsg = "\r\nNow you will be called [" + Name + "]\r\n" + "Check the command list using the H or h key.\r\n";
 	CustomSend(CommandRequestor.ClientSock, sendMsg.c_str(), sendMsg.size(), 0, CommandRequestor);
 }
 
-void Outsourcer::SendingMail()
+void Outsourcer::SendingMail(ClientInfo& CommandRequestor, const std::string& Name, const std::string& Msg)
 {
+	std::string sendMsg = "";
+	if (CommandRequestor.Name == Name)
+	{
+		sendMsg = "Send mail target must be another person.\r\n";
+		CustomSend(CommandRequestor.ClientSock, sendMsg.c_str(), sendMsg.size(), 0, CommandRequestor);
+		return;
+	}
+	//자기자신에겐 귓속말을 보낼 수 없습니다.
+	std::vector<ClientInfo> userInfos = TotalManager::Instance().GetClientInfos();
+	for (int i = 0; i < userInfos.size(); ++i)
+	{
+		if (userInfos[i].Name == Name)
+		{
+			sendMsg = CommandRequestor.Name + ": " + Msg + "\r\n";
+			CustomSend(userInfos[i].ClientSock, sendMsg.c_str(), sendMsg.size(), 0, userInfos[i]);
+			return;
+		}
+		//귓속말을 보낼 유저를 찾은 경우 보내고자 하는 메시지를 상대방에게 보내줍니다.
+	}
+	sendMsg = Name + " is not exist in server\r\n";
+	CustomSend(CommandRequestor.ClientSock, sendMsg.c_str(), sendMsg.size(), 0, CommandRequestor);
+	//만약 찾지 못 한 경우 유저가 없다고 알려줍니다.
 }
 
 void Outsourcer::CreatingChattingroom(const std::string& RoomName, const int ClientIndex, const int MaxParticipant, ClientInfo& CommandRequestor)
@@ -294,8 +338,11 @@ void Outsourcer::EnteringChattingroom(const int RoomIndex, ClientInfo& CommandRe
 	}
 }
 
-void Outsourcer::DisconnectingClient()
+void Outsourcer::DisconnectingClient(ClientInfo& CommandRequestor)
 {
+	std::string msg = "Good bye~\r\n";
+	CustomSend(CommandRequestor.ClientSock, msg.c_str(), msg.size(), 0, CommandRequestor);
+	TotalManager::Instance().MarkingForRemoveClientSocket(CommandRequestor.ClientSock);
 }
 
 bool Outsourcer::CheckingAlphabetInStr(const std::string& Str)

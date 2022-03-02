@@ -29,13 +29,13 @@ private:
 private:
 	void Login(ClientInfo& CommandRequestor, const std::string& Name);
 	//로그인을 처리해줍니다.
-	void SendingMail();
+	void SendingMail(ClientInfo& CommandRequestor, const std::string& Name, const std::string& Msg);
 	//특정 유저에게 귓속말을 보냅니다.
 	void CreatingChattingroom(const std::string& RoomName, const int ClientIndex, const int MaxParticipant, ClientInfo& CommandRequestor);
 	//클라이언트가 요청한 제목과 최대 참가인원을 참고해 채팅방을 만들어줍니다.
 	void EnteringChattingroom(const int RoomIndex, ClientInfo& CommandRequestor);
 	//채팅방에 진입합니다.
-	void DisconnectingClient();
+	void DisconnectingClient(ClientInfo& CommandRequestor);
 	//이 요청을 요구한 클라이언트와 연결을 종료합니다.
 //위에 9개 함수를 하나 씩 채워나갈 예정입니다.
 
