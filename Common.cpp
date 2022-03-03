@@ -13,33 +13,44 @@ ClientInfo::ClientInfo(SOCKET SocketDescriptor):ClientSock(SocketDescriptor), Na
 	ZeroMemory(&Buffer, ClientInfo::MAX_BUFFER_SIZE);
 }
 
-ClientInfo::ClientInfo(const ClientInfo& Other)
+ClientInfo::ClientInfo(const ClientInfo& Other):ClientSock(Other.ClientSock), Name(Other.Name), ConnectionPoint(Other.ConnectionPoint),
+EnteringTime(Other.EnteringTime), IsLogin(Other.IsLogin), IsSend(Other.IsSend), IsJoinRoom(Other.IsJoinRoom), RoomIndex(Other.RoomIndex),
+SendingLeftPos(0), SendingRightPos(0), RecvSize(0)
 {
-	ClientSock = Other.ClientSock;
-	Name = Other.Name;
-	ConnectionPoint = Other.ConnectionPoint;
-	EnteringTime = Other.EnteringTime;
-	IsLogin = Other.IsLogin;
-	IsSend = Other.IsSend;
-	IsJoinRoom= Other.IsJoinRoom;
-	RoomIndex = Other.RoomIndex;
-	
 	ZeroMemory(&Buffer, ClientInfo::MAX_BUFFER_SIZE);
-	SendingLeftPos = 0;
-	SendingRightPos = 0;
-	RecvSize = 0;
-
-	//복사 생성자에서 필요한 정보만 Other로 부터 복사하고 나머지는 default 값으로
-	//초기화 합니다.
+	//복사 생성자에서 필요한 정보만 Other로 부터 복사하고 
+	//나머지는 default 값으로 초기화 합니다.
 }
 
+ClientInfo& ClientInfo::operator=(const ClientInfo& Rhs)
+{
+	if (this == &Rhs)
+	{
+		return *this;
+	}
+	ClientSock = Rhs.ClientSock;
+	strcpy(Buffer.data(), Rhs.Buffer.data());
+	Name = Rhs.Name;
+	ConnectionPoint = Rhs.ConnectionPoint;
+	EnteringTime = Rhs.EnteringTime;
+	IsLogin = Rhs.IsLogin;
+	IsSend = Rhs.IsSend;
+	IsJoinRoom = Rhs.IsJoinRoom;
+	RoomIndex = Rhs.RoomIndex;
+	SendingLeftPos = Rhs.SendingLeftPos;
+	SendingRightPos = Rhs.SendingRightPos;
+	RecvSize = Rhs.RecvSize;
+
+	return *this;
+}
 
 std::pair<bool, unsigned int> CustomRecv(SOCKET S, char* Buf, int Len, int Flags, ClientInfo& CommandRequestor)
 {
 	int recvSize = 0;
 	//recv시 문제가 발생한 경우 SOCKET_ERROR를 리턴하는데 이 값이 -1이라
 	//uint가 아닌 int로 했습니다.
-
+	Len = min(Len, ClientInfo::MAX_BUFFER_SIZE);
+	//최대 버퍼 크기를 넘긴 경우 강제로 Len을 줄입니다.
 	recvSize = recv(S, Buf + CommandRequestor.RecvSize, Len, Flags);
 
 	if (recvSize == 0 || recvSize == SOCKET_ERROR)
@@ -57,10 +68,11 @@ std::pair<bool, unsigned int> CustomRecv(SOCKET S, char* Buf, int Len, int Flags
 			CommandRequestor.RecvSize -= ClientInfo::CRLR_SIZE;
 		}
 		//클라이언트에게 넘어온 \r\n을 서버단에서 무시하기 위해서
-		return { true, CommandRequestor.RecvSize };
+		return { true, min(ClientInfo::MAX_BUFFER_SIZE - 1, CommandRequestor.RecvSize) };
+		//최대 버퍼 크기를 넘어선 사이즈는 무시합니다.
 	}
 
-	return { false, CommandRequestor.RecvSize };
+	return { false, min(ClientInfo::MAX_BUFFER_SIZE - 1, CommandRequestor.RecvSize) };
 }
 
 std::pair<bool, unsigned int> CustomSend(SOCKET S, const char* Buf, int Len, int Flags, ClientInfo& CommandRequestor)
@@ -74,26 +86,27 @@ std::pair<bool, unsigned int> CustomSend(SOCKET S, const char* Buf, int Len, int
 	}
 	//최초 전송시 원래 보내고자했던 사이즈를 기록해두고, 버퍼에 내용물을 복사합니다.
 	
-	int sndSize = 0;
+	int sendSize = 0;
 	//recv와 마찬가지로 SOCKET_ERROR값이 -1이기 때문에 uint가 아닌 int를 사용했습니다.
+	Len = min(Len, ClientInfo::MAX_BUFFER_SIZE);
 	
-	sndSize = send(S, CommandRequestor.Buffer.data() + CommandRequestor.SendingLeftPos, Len, Flags);
+	sendSize = send(S, CommandRequestor.Buffer.data() + CommandRequestor.SendingLeftPos, Len, Flags);
 
-	if (sndSize == SOCKET_ERROR)
+	if (sendSize == SOCKET_ERROR)
 	{
 		return { false, SOCKET_ERROR };
 	}
 
-	if (sndSize == Len)//모든 데이터를 송신 버퍼에 복사 성공!
+	if (sendSize == Len)//모든 데이터를 송신 버퍼에 복사 성공!
 	{
 		CommandRequestor.IsSend = false;
-		return { true, sndSize };
+		return { true, sendSize };
 	}
 	else
 	{
 		CommandRequestor.IsSend = true;
-		CommandRequestor.SendingLeftPos += sndSize;
-		return { false, sndSize };
+		CommandRequestor.SendingLeftPos += sendSize;
+		return { false, sendSize };
 	}
 	//데이터를 전부 송신버퍼에 복사하지 못한 경우
 	//IsSend를 true로 만들어 writeSet에 해당 소켓이 들어가
@@ -112,9 +125,9 @@ std::string GetCurrentSystemTime()
 std::vector<std::string> Tokenizing(const std::string& Str)
 {
 	std::string temp;
-	std::istringstream is{ Str };
+	std::istringstream stream{ Str };
 	std::vector<std::string> tokens;
-	while (std::getline(is, temp, ' '))
+	while (std::getline(stream, temp, ' '))
 	{
 		tokens.emplace_back(temp);
 	}

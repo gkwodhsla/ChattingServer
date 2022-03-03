@@ -432,7 +432,7 @@ void Outsourcer::DisconnectingClient(ClientInfo& CommandRequestor)
 
 void Outsourcer::QuitRoom(ClientInfo& CommandRequestor)
 {
-	std::lock_guard<std::mutex>(TotalManager::ClientInfoLock);
+	std::lock_guard<std::mutex> lockGuard(TotalManager::ClientInfoLock);
 	std::vector<ClientInfo>& infos = TotalManager::Instance().GetClientInfos();
 	for (auto& info : infos)
 	{

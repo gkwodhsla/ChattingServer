@@ -1,4 +1,5 @@
 #pragma once
+#pragma comment(lib, "ws2_32")
 #include <array>
 #include <chrono>
 #include <string>
@@ -8,11 +9,13 @@
 
 const short DEFAULT_PORT = 8000;
 const unsigned int SOCKET_TIME_WAIT_US = 100;
+
 struct ClientInfo
 {
 	ClientInfo();
 	ClientInfo(SOCKET SocketDescriptor);
 	ClientInfo(const ClientInfo& Other);
+	ClientInfo& operator=(const ClientInfo&);
 	virtual ~ClientInfo() = default;
 
 	static const unsigned int MAX_BUFFER_SIZE = 1024;
@@ -27,11 +30,12 @@ struct ClientInfo
 	bool IsSend; //이 플래그가 true일 때만 메시지를 클라이언트에게 보냅니다.
 	bool IsJoinRoom; //이 플래그가 false일 때만 메인쓰레드에서 세트에 소켓을 넣어줍니다.
 	
-	unsigned int RoomIndex;
+	unsigned int RoomIndex;	//클라이언트가 몇 번째 방에 있는지 나타냅니다.
 	unsigned int SendingLeftPos; //전송을 시작할 시작 포인트입니다. (300byte를 보내야하는데 send가 100byte만 성공한 경우 이 값은 100이 됩니다.)
 	unsigned int SendingRightPos; //최초 send 요구 시 입력 받은 크기입니다.
 	//위에 두 값은 CustomSend 에서 사용됩니다.
 	unsigned int RecvSize;
+	//이 값은 CustomRecv에서 사용됩니다. 클라이언트가 총 몇 바이트 보냈는지 나타냅니다.
 
 	static const int LOBBY_INDEX = 99999; // 사용자 세부 정보 검색 시 이 사용자가 로비에 있는지 판단하기 위해 사용됩니다.
 }typedef ClientInfo;

@@ -1,10 +1,8 @@
 #pragma once
-#pragma comment(lib, "ws2_32")
 
 #include "Common.h"
 #include <mutex>
 
-class Outsourcer;
 class ChattingBuilding;
 
 class TotalManager final

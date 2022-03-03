@@ -4,7 +4,8 @@
 #include "TotalManager.h"
 #include <iostream>
 
-TotalManager::TotalManager():ListenSocket(0)
+TotalManager::TotalManager():
+ListenSocket(0)
 {
 	Buildings.emplace_back(new ChattingBuilding());
 	SubThreads.emplace_back(&ChattingBuilding::ProcessingLogic, Buildings.back());
@@ -15,14 +16,14 @@ TotalManager::TotalManager():ListenSocket(0)
 
 TotalManager::~TotalManager()
 {
-	int buildingSize = Buildings.size();
+	size_t buildingSize = Buildings.size();
 	for (int i = 0; i < buildingSize; ++i)
 	{
 		Buildings[i]->StopChattingroomLogic();
 		SubThreads[i].join();
 		//채팅방들의 처리를 관할하던 서브 쓰레드들을 전부 중지 시킵니다.
 		//안전하게 종료하는 것을 기다리기 위해 join으로 끝날 때 까지 기다려줍니다.
-		if (Buildings[i] != nullptr)
+		if (!Buildings[i])
 		{
 			delete Buildings[i];
 			Buildings[i] = nullptr;
@@ -91,7 +92,7 @@ void TotalManager::MainLogic()
 				//(보내야 할 데이터가 아직 Buffer에 남아있는데 recv를 하면 Buffer가 오염되기 때문에)
 			}
 		}
-		select(0, &ReadSet, &WriteSet, nullptr, &timeout); // 하나라도 준비가 된 소켓이 있을 때 까지 대기합니다.
+		select(0, &ReadSet, &WriteSet, nullptr, &timeout);
 
 		ProcessingAfterSelect();
 	}
@@ -105,6 +106,7 @@ void TotalManager::ProcessingAfterSelect()
 	}
 
 	std::lock_guard<std::mutex> lockGuard(TotalManager::ClientInfoLock);
+	//서브쓰레드에서 ClientInfos 배열을 삭제하는 경우가 있기에 lock을 활용했습니다.
 	for (int i = 0; i < ClientInfos.size(); ++i)
 	{
 		SOCKET clientSocket = ClientInfos[i].ClientSock;
@@ -129,7 +131,6 @@ void TotalManager::ProcessingAfterSelect()
 			{
 				std::cout << "disconnect" << std::endl;
 				RemoveClientSocket(i);
-				continue;
 			}
 			//recv에 문제가 생기거나 상대방이 연결을 종료했다면 소켓 정보 관리배열에서
 			//해당 소켓을 제거합니다.
@@ -151,6 +152,7 @@ void TotalManager::ProcessingAfterSelect()
 
 void TotalManager::RemoveClientSocket(int index)
 {
+	std::lock_guard<std::mutex> lockGuard(TotalManager::ClientInfoLock);
 	closesocket(ClientInfos[index].ClientSock);
 	ClientInfos.erase(ClientInfos.begin() + index);
 }
