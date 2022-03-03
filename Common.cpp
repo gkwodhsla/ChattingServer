@@ -17,7 +17,7 @@ ClientInfo::ClientInfo(const ClientInfo& Other):ClientSock(Other.ClientSock), Na
 EnteringTime(Other.EnteringTime), IsLogin(Other.IsLogin), IsSend(Other.IsSend), IsJoinRoom(Other.IsJoinRoom), RoomIndex(Other.RoomIndex),
 SendingLeftPos(0), SendingRightPos(0), RecvSize(0)
 {
-	ZeroMemory(&Buffer, ClientInfo::MAX_BUFFER_SIZE);
+	strcpy(Buffer.data(), Other.Buffer.data());
 	//복사 생성자에서 필요한 정보만 Other로 부터 복사하고 
 	//나머지는 default 값으로 초기화 합니다.
 }

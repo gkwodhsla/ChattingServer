@@ -167,6 +167,7 @@ void Outsourcer::ExecutingChattingRoomCommand(ClientInfo& CommandRequestor, std:
 				msg += tokens[i] + " ";
 			}
 			//토큰으로 조각난 메시지들을 하나의 메시지로 만들어 클라이언트에게 보내줍니다.
+			std::lock_guard<std::mutex> lockGuard(TotalManager::ClientInfoLock);
 			SendingMail(CommandRequestor, tokens[1], msg);
 		}
 	}
@@ -349,7 +350,6 @@ void Outsourcer::SendingMail(ClientInfo& CommandRequestor, const std::string& Na
 	}
 	//자기자신에겐 귓속말을 보낼 수 없습니다.
 
-	std::lock_guard<std::mutex> lockGuard(TotalManager::ClientInfoLock);
 	std::vector<ClientInfo> userInfos = TotalManager::Instance().GetClientInfos();
 	for (int i = 0; i < userInfos.size(); ++i)
 	{

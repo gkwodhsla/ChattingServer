@@ -152,14 +152,12 @@ void TotalManager::ProcessingAfterSelect()
 
 void TotalManager::RemoveClientSocket(int index)
 {
-	std::lock_guard<std::mutex> lockGuard(TotalManager::ClientInfoLock);
 	closesocket(ClientInfos[index].ClientSock);
 	ClientInfos.erase(ClientInfos.begin() + index);
 }
 
 void TotalManager::RemoveClientSocket(const ClientInfo& Info)
 {
-	std::lock_guard<std::mutex> lockGuard(TotalManager::ClientInfoLock);
 	int index = -1;
 	for (int i = 0; i < ClientInfos.size(); ++i)
 	{

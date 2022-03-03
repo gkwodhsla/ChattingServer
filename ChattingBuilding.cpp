@@ -168,7 +168,6 @@ void ChattingBuilding::ProcessingAfterSelect()
 							//나간 인원 관리 배열에서 제거
 							if (ClientInfosEachRoom[i].size() == 0)
 							{
-								std::lock_guard<std::mutex> lockGouard(TotalManager::ClientInfoLock);
 								ResetRoomInfo(i);
 							}
 							//방 참가 인원이 0명이 되면 방을 폭파 시킵니다.
@@ -203,6 +202,7 @@ void ChattingBuilding::ProcessingAfterSelect()
 
 void ChattingBuilding::RemoveClientSocket(int RoomNumber, int Index)
 {
+	std::lock_guard<std::mutex> lockGuard(TotalManager::ClientInfoLock);
 	TotalManager::Instance().RemoveClientSocket(ClientInfosEachRoom[RoomNumber][Index]);
 	--CurParticipantInRooms[RoomNumber];
 	//클라이언트 소켓이 해당 방을 떠난다면 참가 인원 수를 감소시켜줍니다.
