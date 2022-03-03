@@ -65,7 +65,8 @@ unsigned int ChattingBuilding::OccupyingRoom(const std::string& RoomName, Client
 		}
 	}
 	return roomIndex;
-
+	//멀티쓰레드 환경에서 약간의 오차는 생길 수 있지만,
+	//crash는 나지 않을 것으로 판단해 따로 lock을 걸지 않았습니다.
 }
 
 bool ChattingBuilding::IsThereAnyEmptyRoom()
@@ -85,7 +86,7 @@ void ChattingBuilding::EnteringRoom(const int RoomIndex, ClientInfo& Client)
 	std::string roomEnterMsg = "";
 	if (IsEmptyRooms[RoomIndex]) //개설되지 않은 방에 접속하려는 경우 클라이언트에게 안된다고 알려줍니다.
 	{
-		roomEnterMsg = "You can't entering the room (room is not exist)\r\n";
+		roomEnterMsg = "***You can't entering the room (room is not exist)***\r\n";
 		CustomSend(Client.ClientSock, roomEnterMsg.c_str(), roomEnterMsg.size(), 0, Client);
 		return;
 	}
@@ -105,7 +106,7 @@ void ChattingBuilding::EnteringRoom(const int RoomIndex, ClientInfo& Client)
 	}
 	else //방 최대 인원을 넘어선 경우 접속하지 못 한다고 알려줍니다.
 	{
-		roomEnterMsg = "You can't enter this room (room fulled already)\r\n";
+		roomEnterMsg = "***You can't enter this room (room fulled already)***\r\n";
 		CustomSend(Client.ClientSock, roomEnterMsg.c_str(), roomEnterMsg.size(), 0, Client);
 	}
 }
@@ -151,16 +152,17 @@ void ChattingBuilding::ProcessingAfterSelect()
 				//만약 recv에 문제가 생기거나 클라이언트와 연결이 끊기면
 				//관리 배열에서 해당 클라이언트의 정보를 빼줍니다.
 
-				if (recvResult.first)//클라이언트가 \r\n을 입력했다면
+				if (recvResult.first)//클라이언트 입력이 끝났다면
 				{
-					if (buffer.data()[0] == '/')
+					if (buffer.data()[0] == '/')//채팅이 아니라 명령어를 입력했다면
 					{
 						std::string command = std::string(buffer.data(), buffer.data() + recvResult.second);
 						Outsourcer::Instance().ExecutingCommand(ClientInfosEachRoom[i][j], -1, command);
 						//2번 째 인자는 채팅방 명령 수행 시 무시됩니다.
 						//2번 째 인자는 TotalManager에서 방 만들기 명령을 수행했을 때만 사용됩니다.
 						//명령을 수행하는 함수를 여러개 만들면 사용할 때 헷갈릴듯하여 이렇게 구현했습니다.
-						if (buffer.data()[1] == 'q')
+						
+						if (buffer.data()[1] == 'q')//나가기 명령어라면 추가 작업을 수행해줍니다.
 						{
 							--CurParticipantInRooms[i];
 							//인원감소
@@ -173,8 +175,6 @@ void ChattingBuilding::ProcessingAfterSelect()
 							//방 참가 인원이 0명이 되면 방을 폭파 시킵니다.
 							continue;
 						}
-						//만약 나가는 명령이라면 사전 작업(인원감소, 유저 제거) 하고 명령처리를 맡깁니다.
-
 					}
 					else
 					{

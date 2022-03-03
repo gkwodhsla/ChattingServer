@@ -14,15 +14,15 @@ void Outsourcer::ExecutingCommand(ClientInfo& CommandRequestor, const int Client
 		ExecutingChattingRoomCommand(CommandRequestor, Command);
 		return;
 	}
-	//만약 방에 참가한 클라이언트의 명령의 맨 처음 문자가 /로 시작한다면 채팅방전용 명령이기 때문에
+	//만약 방에 참가한 클라이언트 명령의 맨 처음 문자가 /로 시작한다면 채팅방전용 명령이기 때문에
 	//ExecutingChattingRoomCommand을 호출해줍니다.
 
 	std::transform(Command.begin(), Command.end(), Command.begin(),
 		[](unsigned char c) { return tolower(c); });
-	//우선 입력받은 명령어를 모두 소문자로 바꾼다.
+	//입력받은 명령어를 모두 소문자로!
 
 	std::vector<std::string> tokens = Tokenizing(Command);
-	
+	//명령어를 공백 기준으로 조각냅니다.
 	
 	if (tokens[0] == "login")
 	{
@@ -30,7 +30,7 @@ void Outsourcer::ExecutingCommand(ClientInfo& CommandRequestor, const int Client
 		
 		if (tokens.size() < CORRECT_LOGIN_TOKEN_NUM) //만약 login명령어만 입력하고 이름을 입력하지 않은 경우라면 실패!
 		{
-			failMsg = "Please enter the name\r\n";
+			failMsg = "***Please enter the name***\r\n";
 			CustomSend(CommandRequestor.ClientSock, failMsg.c_str(), failMsg.size(), 0, CommandRequestor);
 		}
 		else
@@ -39,7 +39,7 @@ void Outsourcer::ExecutingCommand(ClientInfo& CommandRequestor, const int Client
 		}
 	}
 
-	if (CommandRequestor.IsLogin)
+	if (CommandRequestor.IsLogin) //로그인을 하지 않으면 명령어들을 수행할 수 없습니다.
 	{
 		if (tokens[0] == "h")
 		{
@@ -53,74 +53,53 @@ void Outsourcer::ExecutingCommand(ClientInfo& CommandRequestor, const int Client
 		{
 			SendingChattingroomList(CommandRequestor);
 		}
-		else if (tokens[0] == "st")
+		else if (tokens[0] == "st" && tokens.size() >= ST_TOKEN_SIZE)
 		{
-			if (tokens.size() >= 2)
+			SendingChattingroomInfo(CommandRequestor, tokens[1]);
+		}
+		else if (tokens[0] == "pf" && tokens.size() >= PF_TOKEN_SIZE)
+		{
+			SendingUserInfo(CommandRequestor, tokens[1]);
+		}
+		else if (tokens[0] == "to" && tokens.size() >= TO_TOKEN_SIZE)
+		{
+			SendingMail(CommandRequestor, tokens);
+		}
+		else if (tokens[0] == "o" && tokens.size() >= O_TOKEN_SIZE)
+		{
+			bool isThereAlphabet = CheckingAlphabetInStr(tokens[1]);
+			if (isThereAlphabet)
 			{
-				SendingChattingroomInfo(CommandRequestor, tokens[1]);
+				std::string failMsg{ "\r\n***Participant count only accept numeric number***\r\n" };
+				CustomSend(CommandRequestor.ClientSock, failMsg.c_str(), failMsg.size(), 0, CommandRequestor);
+			}
+			//정수가 나와야하는데 알파벳이 하나라도 나온다면 다시 명령어를 입력해달라고 요청!
+			else if (std::stoi(tokens[1]) > 16 || std::stoi(tokens[1]) < 2)
+			{
+				std::string failMsg{ "\r\n***participant range must (2 ~ 16)***\r\n" };
+				CustomSend(CommandRequestor.ClientSock, failMsg.c_str(), failMsg.size(), 0, CommandRequestor);
+			}
+			//만약 최대 참석인원 수를 넘긴 숫자가 입력됐다면 다시 명령어를 입력해달라고 요청!
+			else
+			{
+				CreatingChattingroom(tokens[2], ClientIndex, std::stoi(tokens[1]), CommandRequestor);
 			}
 		}
-		else if (tokens[0] == "pf")
+		else if (tokens[0] == "j" && tokens.size() >= J_TOKEN_SIZE)
 		{
-			if (tokens.size() >= 2)
-			{
-				SendingUserInfo(CommandRequestor, tokens[1]);
-			}
-		}
-		else if (tokens[0] == "to")
-		{
-			if (tokens.size() >= 2)
-			{
-				std::string msg;
-				for (int i = 2; i < tokens.size(); ++i)
-				{
-					msg += tokens[i] + " ";
-				}
-				//토큰으로 조각난 메시지들을 하나의 메시지로 만들어 클라이언트에게 보내줍니다.
-				SendingMail(CommandRequestor, tokens[1], msg);
-			}
-		}
-		else if (tokens[0] == "o")
-		{
-			if (tokens.size() >= 3)
-			{
-				bool isThereAlphabet = CheckingAlphabetInStr(tokens[1]);
-				if (isThereAlphabet)
-				{
-					std::string failMsg{ "\r\nParticipant count only accept numeric number\r\n" };
-					CustomSend(CommandRequestor.ClientSock, failMsg.c_str(), failMsg.size(), 0, CommandRequestor);
-				}
-				//정수가 나와야하는데 알파벳이 하나라도 나온다면 다시 명령어를 입력해달라고 요청!
-				else if (std::stoi(tokens[1]) > 16 || std::stoi(tokens[1]) < 2)
-				{
-					std::string failMsg{ "\r\nparticipant range must (2 ~ 16)\r\n" };
-					CustomSend(CommandRequestor.ClientSock, failMsg.c_str(), failMsg.size(), 0, CommandRequestor);
-				}
-				//만약 최대 참석인원 수를 넘긴 숫자가 입력됐다면 다시 명령어를 입력해달라고 요청!
-				else
-				{
-					CreatingChattingroom(tokens[2], ClientIndex, std::stoi(tokens[1]), CommandRequestor);
-				}
-			}
-		}
-		else if (tokens[0] == "j")
-		{
-			if (tokens.size() >= 2)
-			{
-				EnteringChattingroom(std::stoi(tokens[1]), CommandRequestor);
-			}
+			EnteringChattingroom(std::stoi(tokens[1]), CommandRequestor);
 		}
 		else if (tokens[0] == "x")
 		{
 			DisconnectingClient(CommandRequestor);
 		}
+		return;
 	}
-	else//로그인 하지 않은 상태에서 명령어를 입력하면 로그인을 먼저 하라고 알려줍니다.
-	{
-		std::string failMsg;
-		failMsg = "Please login first\r\n";
-		CustomSend(CommandRequestor.ClientSock, failMsg.c_str(), failMsg.size(), 0, CommandRequestor);
-	}
+	
+	std::string failMsg;
+	failMsg = "***Please login first***\r\n";
+	CustomSend(CommandRequestor.ClientSock, failMsg.c_str(), failMsg.size(), 0, CommandRequestor);
+	//로그인 하지 않은 상태에서 명령어를 입력하면 로그인을 먼저 하라고 알려줍니다.
 }
 
 void Outsourcer::ExecutingChattingRoomCommand(ClientInfo& CommandRequestor, std::string& Command)
@@ -143,38 +122,25 @@ void Outsourcer::ExecutingChattingRoomCommand(ClientInfo& CommandRequestor, std:
 	{
 		SendingChattingroomList(CommandRequestor);
 	}
-	else if (tokens[0] == "/st")
+	else if (tokens[0] == "/st" && tokens.size() >= ST_TOKEN_SIZE)
 	{
-		if (tokens.size() >= 2)
-		{
-			SendingChattingroomInfo(CommandRequestor, tokens[1]);
-		}
+		SendingChattingroomInfo(CommandRequestor, tokens[1]);		
 	}
-	else if (tokens[0] == "/pf")
+	else if (tokens[0] == "/pf" && tokens.size() >= PF_TOKEN_SIZE)
 	{
-		if (tokens.size() >= 2)
-		{
-			SendingUserInfo(CommandRequestor, tokens[1]);
-		}
+		SendingUserInfo(CommandRequestor, tokens[1]);
 	}
-	else if (tokens[0] == "/to")
+	else if (tokens[0] == "/to" && tokens.size() >= TO_TOKEN_SIZE)
 	{
-		if (tokens.size() >= 2)
-		{
-			std::string msg;
-			for (int i = 2; i < tokens.size(); ++i)
-			{
-				msg += tokens[i] + " ";
-			}
-			//토큰으로 조각난 메시지들을 하나의 메시지로 만들어 클라이언트에게 보내줍니다.
-			std::lock_guard<std::mutex> lockGuard(TotalManager::ClientInfoLock);
-			SendingMail(CommandRequestor, tokens[1], msg);
-		}
+		std::lock_guard<std::mutex> lockGuard(TotalManager::ClientInfoLock);
+		SendingMail(CommandRequestor, tokens);
+		
 	}
-	else if (tokens[0] == "/in")
+	else if (tokens[0] == "/in" && tokens.size() == IN_TOKEN_SIZE)
 	{
 		std::string msg = CommandRequestor.Name + " is invite you room " + std::to_string(CommandRequestor.RoomIndex) + "\r\n";
-		SendingMail(CommandRequestor, tokens[1], msg);
+		tokens.emplace_back(msg);
+		SendingMail(CommandRequestor, tokens);
 	}
 	else if (tokens[0] == "/q")
 	{
@@ -200,7 +166,7 @@ void Outsourcer::SendingUserList(ClientInfo& CommandRequestor)
 {
 	const std::vector<ClientInfo> userInfos = TotalManager::Instance().GetClientInfos();
 
-	std::string sendMsg = "\r\n";
+	std::string sendMsg = "--------------------------UserList--------------------------\r\n";
 	for (int i = 0; i < userInfos.size(); ++i)//유저 정보를 순회하며 메시지를 완성 시킵니다.
 	{
 		sendMsg += "Name: " + userInfos[i].Name + "\tConnected from:" + userInfos[i].ConnectionPoint + "\r\n";
@@ -219,7 +185,7 @@ void Outsourcer::SendingChattingroomList(ClientInfo& CommandRequestor)
 		const std::array<unsigned int, ChattingBuilding::MAX_ROOM_NUM> curParticipant = buildings[i]->GetCurParticipantInRooms();
 		const std::array<unsigned int, ChattingBuilding::MAX_ROOM_NUM> maxParticipant = buildings[i]->GetMaximumParticipants();
 		const std::array<std::string, ChattingBuilding::MAX_ROOM_NUM> roomName = buildings[i]->GetRoomNames();
-		std::string sendMsg = "";
+		std::string sendMsg = "--------------------------RoomList--------------------------\r\n";
 		for (int j = 0; j < ChattingBuilding::MAX_ROOM_NUM; ++j)
 		{
 			if (!isEmptyRoom[j])
@@ -240,7 +206,7 @@ void Outsourcer::SendingChattingroomInfo(ClientInfo& CommandRequestor, const std
 	bool isThereAlphabet = CheckingAlphabetInStr(RoomIndex);
 	if (isThereAlphabet)
 	{
-		std::string failMsg{ "\r\nRoom Index only accept numeric number(0~)\r\n" };
+		std::string failMsg{ "\r\n***Room Index only accept numeric number(0~)***\r\n" };
 		CustomSend(CommandRequestor.ClientSock, failMsg.c_str(), failMsg.size(), 0, CommandRequestor);
 		return;
 	}
@@ -252,11 +218,11 @@ void Outsourcer::SendingChattingroomInfo(ClientInfo& CommandRequestor, const std
 	//RoomIndex/maxRoom -> 채팅빌딩 중 몇 번째 채팅빌딩인가?
 	//RoomIndex % maxRoom -> 앞에서 정한 채팅빌딩 중 몇 번째 방인가?
 	
-	std::string sendMsg = "";
+	std::string sendMsg = "--------------------------RoomInfo--------------------------\r\n";
 	if (buildings.size() * ChattingBuilding::MAX_ROOM_NUM - 1 < roomIndex ||
 		buildings[whichBuilding]->GetIsEmptyRooms()[whichRoom])
 	{
-		sendMsg = "Room that you asking is not exist\r\n";
+		sendMsg = "***Room that you asking is not exist***\r\n";
 		CustomSend(CommandRequestor.ClientSock, sendMsg.c_str(), sendMsg.size(), 0, CommandRequestor);
 	}
 	////생성된 채팅방 보다 큰 수의 RoomIndex가 들어오면 에러 메시지를 보내줍니다.
@@ -268,7 +234,7 @@ void Outsourcer::SendingChattingroomInfo(ClientInfo& CommandRequestor, const std
 		const std::array<std::string, ChattingBuilding::MAX_ROOM_NUM> roomName = buildings[whichBuilding]->GetRoomNames();
 		const std::array<std::string, ChattingBuilding::MAX_ROOM_NUM> creatingTime = buildings[whichBuilding]->GetRoomCreatingTimes();
 
-		sendMsg = "[" + std::to_string(roomIndex) + "]" + std::to_string(curParticipant[whichRoom])
+		sendMsg += "[" + std::to_string(roomIndex) + "]" + std::to_string(curParticipant[whichRoom])
 			+ "/" + std::to_string(maxParticipant[whichRoom]) + " Room name: " +
 			roomName[whichRoom] + " Creating time: " + creatingTime[whichRoom] + "\r\n";
 
@@ -286,7 +252,7 @@ void Outsourcer::SendingUserInfo(ClientInfo& CommandRequestor, const std::string
 {
 	const std::vector<ClientInfo>& userInfos = TotalManager::Instance().GetClientInfos();
 
-	std::string sendMsg = "";
+	std::string sendMsg = "--------------------------UserInfo--------------------------\r\n";
 	for (int i = 0; i < userInfos.size(); ++i)
 	{
 		if (userInfos[i].Name == Name)
@@ -307,7 +273,7 @@ void Outsourcer::SendingUserInfo(ClientInfo& CommandRequestor, const std::string
 	}
 
 	//찾고자 하는 유저가 채팅서버에 존재하지 않는 경우 입니다.
-	sendMsg += Name + " is not exist in server\r\n";
+	sendMsg += "***" + Name + " is not exist in server***\r\n";
 	CustomSend(CommandRequestor.ClientSock, sendMsg.c_str(), sendMsg.size(), 0, CommandRequestor);
 }
 
@@ -316,7 +282,7 @@ void Outsourcer::Login(ClientInfo& CommandRequestor, const std::string& Name)
 	std::string failMsg = "";
 	if (CommandRequestor.IsLogin)
 	{
-		failMsg = "You already login!\r\n";
+		failMsg = "***You already login!***\r\n";
 		CustomSend(CommandRequestor.ClientSock, failMsg.c_str(), failMsg.size(), 0, CommandRequestor);
 		return;
 	}
@@ -326,7 +292,7 @@ void Outsourcer::Login(ClientInfo& CommandRequestor, const std::string& Name)
 	{
 		if (clientInfos[i].Name == Name)
 		{
-			failMsg = "Other user already using that name. please try another name.\r\n";
+			failMsg = "***Other user already using that name. please try another name.***\r\n";
 			CustomSend(CommandRequestor.ClientSock, failMsg.c_str(), failMsg.size(), 0, CommandRequestor);
 			return;
 		}
@@ -339,12 +305,19 @@ void Outsourcer::Login(ClientInfo& CommandRequestor, const std::string& Name)
 	CustomSend(CommandRequestor.ClientSock, sendMsg.c_str(), sendMsg.size(), 0, CommandRequestor);
 }
 
-void Outsourcer::SendingMail(ClientInfo& CommandRequestor, const std::string& Name, const std::string& Msg)
+void Outsourcer::SendingMail(ClientInfo& CommandRequestor, const std::vector<std::string>& Tokens)
 {
-	std::string sendMsg = "";
-	if (CommandRequestor.Name == Name)
+	std::string name = Tokens[1];
+	std::string msg;
+	for (int i = 2; i < Tokens.size(); ++i)
 	{
-		sendMsg = "Send mail target must be another person.\r\n";
+		msg += Tokens[i] + " ";
+	}
+	//토큰으로 조각난 메시지들을 하나의 메시지로 만들어 클라이언트에게 보내줍니다.
+	std::string sendMsg = "";
+	if (CommandRequestor.Name == name)
+	{
+		sendMsg = "***Send mail target must be another person.***\r\n";
 		CustomSend(CommandRequestor.ClientSock, sendMsg.c_str(), sendMsg.size(), 0, CommandRequestor);
 		return;
 	}
@@ -353,15 +326,15 @@ void Outsourcer::SendingMail(ClientInfo& CommandRequestor, const std::string& Na
 	std::vector<ClientInfo> userInfos = TotalManager::Instance().GetClientInfos();
 	for (int i = 0; i < userInfos.size(); ++i)
 	{
-		if (userInfos[i].Name == Name)
+		if (userInfos[i].Name == name)
 		{
-			sendMsg = CommandRequestor.Name + ": " + Msg + "\r\n";
+			sendMsg = CommandRequestor.Name + ": " + msg + "\r\n";
 			CustomSend(userInfos[i].ClientSock, sendMsg.c_str(), sendMsg.size(), 0, userInfos[i]);
 			return;
 		}
 		//귓속말을 보낼 유저를 찾은 경우 보내고자 하는 메시지를 상대방에게 보내줍니다.
 	}
-	sendMsg = Name + " is not exist in server\r\n";
+	sendMsg = "***" + name + " is not exist in server***\r\n";
 	CustomSend(CommandRequestor.ClientSock, sendMsg.c_str(), sendMsg.size(), 0, CommandRequestor);
 	//만약 찾지 못 한 경우 유저가 없다고 알려줍니다.
 }
@@ -407,7 +380,7 @@ void Outsourcer::EnteringChattingroom(const int RoomIndex, ClientInfo& CommandRe
 	std::vector<ChattingBuilding*>& buildings = TotalManager::Instance().GetBuildings();
 	if (buildings.size() * ChattingBuilding::MAX_ROOM_NUM - 1 < RoomIndex)
 	{
-		std::string failMsg = "You can't entering the room (room is not exist)\r\n";
+		std::string failMsg = "***You can't entering the room (room is not exist)***\r\n";
 		CustomSend(CommandRequestor.ClientSock, failMsg.c_str(), failMsg.size(), 0, CommandRequestor);
 	}
 	else

@@ -37,7 +37,7 @@ private:
 private:
 	void Login(ClientInfo& CommandRequestor, const std::string& Name);
 	//로그인을 처리해줍니다.
-	void SendingMail(ClientInfo& CommandRequestor, const std::string& Name, const std::string& Msg);
+	void SendingMail(ClientInfo& CommandRequestor, const std::vector<std::string>& Tokens);
 	//특정 유저에게 귓속말을 보냅니다.
 	void CreatingChattingroom(const std::string& RoomName, const int ClientIndex, const int MaxParticipant, ClientInfo& CommandRequestor);
 	//클라이언트가 요청한 제목과 최대 참가인원을 참고해 채팅방을 만들어줍니다.
@@ -52,10 +52,16 @@ private:
 	bool CheckingAlphabetInStr(const std::string&);
 
 private:
-	static inline const std::string CommandList = { "\r\nH\t\t\t\t\tShow all command list\r\nUS\t\t\t\t\tShow all user\r\nLT\t\t\t\t\tShow all chattingroom\r\nST [room number]\t\t\tShow chattingroom info\r\nPF [other user Id]\t\t\tShow user info\r\nTO [other user Id] [message]\t\tSend mail\r\nO [Maximum participants] [Room name]\tCreate chattingroom\r\nJ [Room number]\t\t\t\tJoin the chattingroom\r\nX\t\t\t\t\tdisconnecting\r\n" };
-	static inline const std::string CommandListForRoom = { "\r\n/H\t\t\t\t\tShow all command list\r\n/US\t\t\t\t\tShow all user\r\n/LT\t\t\t\t\tShow all chattingroom\r\n/ST [room number]\t\t\tShow chattingroom info\r\n/PF [other user Id]\t\t\tShow user info\r\n/TO [other user Id] [message]\t\tSend mail\r\n/IN [User Name]\t\t\t\tInviting user\r\n/Q\t\t\t\t\tQuit\r\n\r\n" };
+	static inline const std::string CommandList = { "\r\n--------------------------CommandList--------------------------\r\nH\t\t\t\t\tShow all command list\r\nUS\t\t\t\t\tShow all user\r\nLT\t\t\t\t\tShow all chattingroom\r\nST [room number]\t\t\tShow chattingroom info\r\nPF [other user Id]\t\t\tShow user info\r\nTO [other user Id] [message]\t\tSend mail\r\nO [Maximum participants] [Room name]\tCreate chattingroom\r\nJ [Room number]\t\t\t\tJoin the chattingroom\r\nX\t\t\t\t\tdisconnecting\r\n" };
+	static inline const std::string CommandListForRoom = { "\r\n--------------------------CommandList--------------------------\r\n/H\t\t\t\t\tShow all command list\r\n/US\t\t\t\t\tShow all user\r\n/LT\t\t\t\t\tShow all chattingroom\r\n/ST [room number]\t\t\tShow chattingroom info\r\n/PF [other user Id]\t\t\tShow user info\r\n/TO [other user Id] [message]\t\tSend mail\r\n/IN [User Name]\t\t\t\tInviting user\r\n/Q\t\t\t\t\tQuit\r\n\r\n" };
 	//클라이언트가 h키를 통해 명령어를 요청했을 때 보낼 메시지입니다.
 	static const unsigned int CORRECT_LOGIN_TOKEN_NUM = 2;
+	static const unsigned int ST_TOKEN_SIZE = 2;
+	static const unsigned int PF_TOKEN_SIZE = 2;
+	static const unsigned int TO_TOKEN_SIZE = 2;
+	static const unsigned int IN_TOKEN_SIZE = 2;
+	static const unsigned int O_TOKEN_SIZE = 2;
+	static const unsigned int J_TOKEN_SIZE = 2;
 };
 
 //이 클래스는 TotalManager에게 명령어를 받아 파싱하고, 명령어에 따라

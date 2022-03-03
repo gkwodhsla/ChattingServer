@@ -15,10 +15,13 @@ public:
 	void ProcessingLogic();
 	//이곳에서 select,send, recv를 수행합니다. TotalManager의 MainLogic과 하는 일이 유사합니다.
 	//서브 쓰레드가 이 함수를 실행합니다.
+public:
 	bool IsThereAnyEmptyRoom(); //만약 이 건물에 빈 방이 있다면 true를 아니라면 false를 반환합니다.
-	unsigned int OccupyingRoom(const std::string& RoomName, ClientInfo& Requestor, const int MaximumParticipant); //방을 차지하고, 이름을 부여합니다.
+	unsigned int OccupyingRoom(const std::string& RoomName, ClientInfo& Requestor, const int MaximumParticipant);
+	//방을 차지하고, 이름을 부여합니다.
 	void EnteringRoom(const int RoomIndex, ClientInfo& Client); //해당 방으로 참석 시킵니다.
 	void StopChattingroomLogic() { ShouldLogicStop = true; }
+	//위 함수들은 메인쓰레드에서 접근하는 함수입니다. 서브쓰레드는 사용하지 않습니다.	
 
 public:
 	static const unsigned int MAX_ROOM_NUM = 4;
@@ -37,6 +40,7 @@ public:
 	const std::array<unsigned int, MAX_ROOM_NUM>& GetCurParticipantInRooms() const { return CurParticipantInRooms; }
 	const std::array<bool, MAX_ROOM_NUM>& GetIsEmptyRooms() const { return IsEmptyRooms; }
 	const std::vector<std::string> GetUsersNameAndEnteringTime(unsigned int RoomIndex)const;
+	//const 버전 외에는 필요할 것 같지 않아 const 버전만 만들었습니다.
 
 private:
 	std::vector<ClientInfo> ClientInfosEachRoom[MAX_ROOM_NUM];
@@ -48,9 +52,12 @@ private:
 	std::array<unsigned int, MAX_ROOM_NUM> CurParticipantInRooms;
 	std::array<bool, MAX_ROOM_NUM> IsEmptyRooms;
 	fd_set ReadSet, WriteSet;
-	std::atomic<bool> ShouldLogicStop;// 이 플래그가 false가 되면 서브쓰레드 실행을 중단시킵니다.
+	std::atomic<bool> ShouldLogicStop;
+	// 이 플래그가 false가 되면 서브쓰레드 실행을 중단시킵니다.
 	std::mutex lock;
-	//MainThread에서 해당 건물의 Thread를 중단시키고 싶을 때 이 플래그를 true로 만들어줍니다.
+	//메인쓰레드에서 서브쓰레드의 데이터를 건드릴 때 사용되는 lock입니다.
+	//방 참여하기 같은 경우 메인쓰레드에서 서브쓰레드의 ClientInfosEachRoom을 건드리기
+	//때문에 이 lock이 사용됩니다.
 };
 
 //이 클래스는 총 4개의 채팅방과 각각의 채팅방에 접속한 클라이언트를 관리합니다.
